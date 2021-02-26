@@ -1,0 +1,32 @@
+{
+  "name": "react-pixel-text-renderer",
+  "version": "1.0.0",
+  "description": "A react component for rendering strings on canvas elements using a set of characters each defined on a 5 x 5 grid.",
+  "main": "./build/TextRenderer.js",
+  "scripts": {
+    "build": "webpack"
+  },
+  "keywords": [
+    "Canvas",
+    "Pixel",
+    "Font",
+    "Pixelated",
+    "React",
+    "Text"
+  ],
+  "author": "Patrick Kaipainen",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.7.5",
+    "@babel/preset-env": "^7.7.6",
+    "@babel/preset-react": "^7.7.4",
+    "babel-loader": "^8.0.6",
+    "css-loader": "^3.3.0",
+    "style-loader": "^1.0.1",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10"
+  },
+  "dependencies": {
+    "react": "^17.0.1"
+  }
+}
