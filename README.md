@@ -25,7 +25,8 @@ It could also be called like this:
   bgColor = {'rgba(0,10,50,1)'} 
   color = {[230, 0, 190]} 
   text={"it's good it's bad it's ugly it's a pixel text renderer."}
-  scale={20} charSpaces={8} 
+  scale={20} 
+  charSpaces={8} 
   animate={true}
 />
 ```
@@ -45,3 +46,6 @@ It could also be called like this:
 
   * #### animate
     * Defaults false. If set to true, when the text is rendered it will do so with an animation.
+
+  * #### scale
+    * A multiplier to scale the nominal dimensions of the underlying pixel information to a larger grid.
