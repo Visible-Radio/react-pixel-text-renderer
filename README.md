@@ -1,6 +1,8 @@
 # react-pixel-text-renderer
 A reusable react component that renders a string to a canvas element.
 
+install by npm: npm i react-pixel-text-renderer
+
 The function component can be called without any props like this:
 
 Resulting in the a canvas with some sample text and randomized colors.
