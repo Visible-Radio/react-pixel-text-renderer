@@ -1,4 +1,5 @@
-import renderText from '../utils/renderFunction';
+import renderText from './renderFunction';
+import React from 'react';
 import { useRef, useEffect } from 'react';
 
 export default function TextRenderer({ text, bgColor, scale, color, charSpaces, animate }) {
@@ -15,7 +16,7 @@ export default function TextRenderer({ text, bgColor, scale, color, charSpaces, 
   })
 
   return (
-    <div style={{margin: 0, padding: 0, display: 'flex', width: 'auto'}} className="textRendererWrapper">
+    <div style={{margin: 0, padding: 0, display: 'flex', width: 'auto'}} className="textRendererWrapperInternal">
       <canvas
         ref = {canvasRef}
         className="TextRendererCanvasInternal"
