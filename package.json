@@ -3,6 +3,10 @@
   "version": "1.1.0",
   "description": "A react component for rendering strings on canvas elements using a set of characters each defined on a 5 x 5 grid.",
   "main": "./build/TextRenderer.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Visible-Radio/react-pixel-text-renderer"
+  },
   "scripts": {
     "build": "webpack"
   },
