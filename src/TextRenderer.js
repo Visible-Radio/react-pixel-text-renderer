@@ -2,7 +2,7 @@ import renderText from './renderFunction';
 import React from 'react';
 import { useRef, useEffect } from 'react';
 
-export default function TextRenderer({ text, bgColor, scale, color, charSpaces, animate, scaleMode, wordWrap }) {
+export default function TextRenderer({ text, bgColor, scale, color, charSpaces, animate, scaleMode, wordWrap, customDefs }) {
   const canvasRef = useRef(null);
   const defaultText = "sample text"
 
@@ -20,6 +20,7 @@ export default function TextRenderer({ text, bgColor, scale, color, charSpaces, 
       , color || null
       , animate || false
       , wordWrap || false
+      , customDefs || null
     )
   });
 

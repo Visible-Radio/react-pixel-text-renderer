@@ -1,6 +1,7 @@
+// old bundled defs
 import { charDefinitions } from './definitions2';
 
-export default function renderText(width, pixelScale, canvasRef, inputText, color, animate=false, wordWrap = false) {
+export default function renderText(width, pixelScale, canvasRef, inputText, color, animate=false, wordWrap = false, customDefs) {
 
 	// calculate the closest appropriate width based on the input width
 	const remainder = width % 6;
@@ -17,7 +18,8 @@ export default function renderText(width, pixelScale, canvasRef, inputText, colo
 
 	let currentPermittedWidth = 0;
 	let textPixels = [];
-	const characterMaps =  charDefinitions();
+	// import custom defs if supplied or use the bundled ones
+	const characterMaps =  customDefs || charDefinitions();
 	const  { charWidth } = characterMaps;
 	const horizontalChars = parseInt(width/(6)+1,10);
 	const { starts, words, wastedCharSpaces } = getWordStarts(inputText);
