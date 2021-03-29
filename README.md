@@ -32,6 +32,10 @@ It could also be called like this:
 ```
 
 * #### PROPS
+  * ### customDefs
+    * A JSON character definition file to be used instead of the internal definitions.
+    * More information on creating custom definitions here: [https://github.com/Visible-Radio/react-pixel-character-editor](https://github.com/Visible-Radio/react-pixel-character-editor).
+
   * #### bgColor
     * Accepts any CSS color value. It simply styles the background of the canvas element. Omitting it results in a transparent background.
 
