@@ -1,6 +1,9 @@
 # react-pixel-text-renderer
 *A reusable react component that renders a string to a canvas element.*
 
+### News
+  * You can now pass in custom character definitions via the customDefs prop!
+
 ### Install
 **npm i react-pixel-text-renderer**
 
@@ -32,7 +35,7 @@ It could also be called like this:
 ```
 
 * #### PROPS
-  * ### customDefs
+  * #### customDefs
     * A JSON character definition file to be used instead of the internal definitions.
     * More information on creating custom definitions here: [https://github.com/Visible-Radio/react-pixel-character-editor](https://github.com/Visible-Radio/react-pixel-character-editor).
 
