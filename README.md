@@ -2,7 +2,11 @@
 *A reusable react component that renders a string to a canvas element.*
 
 ### News
-  * You can now pass in custom character definitions via the customDefs prop!
+  * UPDATE - April 9 2021
+    * Custom definitions can now define characters on different sized grids.
+    * Fixed unnecessary re-rendering due to missing deps in useEffect callback.
+  * UPDATE - March 29 2021
+    * You can now pass in custom character definitions via the customDefs prop!
 
 ### Install
 **npm i react-pixel-text-renderer**
