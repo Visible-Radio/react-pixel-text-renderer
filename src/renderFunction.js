@@ -2,32 +2,32 @@
 import { charDefinitions } from './definitions2';
 
 export default function renderText(width, pixelScale, canvasRef, inputText, color, animate=false, wordWrap = false, customDefs) {
+	// import custom defs if supplied or use the bundled ones
+	const characterMaps =  customDefs || charDefinitions();
+	const  { charWidth } = characterMaps;
 
 	// calculate the closest appropriate width based on the input width
-	const remainder = width % 6;
+	const remainder = width % (charWidth + 1);
 	if (remainder === 0) {
 		width = width - 1;
 
 	}	else if (remainder !== 0) {
 		width = width - remainder -1
 	}
-  if (width < 5) {
-		console.log("width must be at least 6");
+  if (width < charWidth) {
+		console.log(`width must be at least ${charWidth + 1}`);
 		return;
 	}
 
 	let currentPermittedWidth = 0;
 	let textPixels = [];
-	// import custom defs if supplied or use the bundled ones
-	const characterMaps =  customDefs || charDefinitions();
-	const  { charWidth } = characterMaps;
-	const horizontalChars = parseInt(width/(6)+1,10);
+	const horizontalChars = parseInt(width/((charWidth + 1))+1,10);
 	const { starts, words, wastedCharSpaces } = getWordStarts(inputText);
 
 	// calculate how many rows needed for the given input text if we're using charWrap or wordWrap
 	const rows = Math.ceil((inputText.length + (() => wordWrap ? wastedCharSpaces : 0)()) / horizontalChars);
 	// calculate pixel grid height based on input text
-	const height = (rows * 5) + (rows - 1);
+	const height = (rows * charWidth) + (rows - 1);
 
  	// set up the canvas
 	const canvas = canvasRef.current
@@ -66,14 +66,14 @@ export default function renderText(width, pixelScale, canvasRef, inputText, colo
 		for (let i = 0; i < words.length; i++) {
 			if (remaining >= words[i].length) {
 				starts.push(startPosition);
-				startPosition += (words[i].length * 6) + 6
+				startPosition += (words[i].length * (charWidth + 1)) + (charWidth + 1)
 				remaining -= words[i].length + 1;
 			} else {
 				wastedCharSpaces += remaining;
 				// jump to new line
-				startPosition += ((width + 1) * 5) + (remaining - 1) * 6;
+				startPosition += ((width + 1) * charWidth) + (remaining - 1) * (charWidth + 1);
 				starts.push(startPosition);
-				startPosition += (words[i].length * 6) + 6;
+				startPosition += (words[i].length * (charWidth + 1)) + (charWidth + 1);
 				remaining = horizontalChars;
 				remaining -= words[i].length + 1;
 			}
@@ -101,7 +101,7 @@ export default function renderText(width, pixelScale, canvasRef, inputText, colo
 				} else {
 					writeChar(" ", textPixels, startPosition + charPosition);
 				}
-				charPosition += 6;
+				charPosition += (charWidth + 1);
 			})
 		});
 	}
@@ -127,9 +127,9 @@ export default function renderText(width, pixelScale, canvasRef, inputText, colo
 			remaining--;
 			if (remaining === 0) {
 				remaining = horizontalChars;
-				position += (width + 1) * 5;
+				position += (width + 1) * charWidth;
 			} else {
-				position += 6;
+				position += (charWidth + 1);
 			}
 		}
 	}

@@ -5,6 +5,9 @@ import { useRef, useEffect } from 'react';
 export default function TextRenderer({ text, bgColor, scale, color, charSpaces, animate, scaleMode, wordWrap, customDefs }) {
   const canvasRef = useRef(null);
   const defaultText = "sample text"
+  if (!text) text = defaultText;
+
+  const charWidth = customDefs ? customDefs.charWidth : 5;
 
   function parseWidth(text) {
     if (!charSpaces) return null;
@@ -13,16 +16,19 @@ export default function TextRenderer({ text, bgColor, scale, color, charSpaces, 
     return (charSpaces < longestWord) ? longestWord : charSpaces;
   }
 
+  const parsedWidth = parseWidth(text);
+
   useEffect(()=> {
-    renderText(parseWidth(text) * 6 || text?.length * 6 || defaultText.length * 6
-      , scale || 5
-      , canvasRef, text || defaultText
-      , color || null
-      , animate || false
-      , wordWrap || false
-      , customDefs || null
+    renderText(parsedWidth * (charWidth + 1) || text?.length * (charWidth + 1) || defaultText.length * (charWidth + 1)
+    , scale || 5
+    , canvasRef
+    , text || defaultText
+    , color || null
+    , animate || false
+    , wordWrap || false
+    , customDefs || null
     )
-  });
+  },[animate, color, parsedWidth, scale, text, wordWrap, charWidth, customDefs]);
 
   // depending on scale mode, inject different styles into destinationCanvas element
   const innerStyles = () => {
