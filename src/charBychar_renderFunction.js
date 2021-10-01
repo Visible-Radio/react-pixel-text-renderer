@@ -1,7 +1,7 @@
 // old bundled defs
 import { charDefinitions } from './definitions2';
 
-export default function renderText(width, pixelScale, canvasRef, inputText, color, animate=false, wordWrap = false, customDefs) {
+export default async function renderText(width, pixelScale, canvasRef, inputText, color, animate=false, wordWrap = false, customDefs, setDone) {
 	// import custom defs if supplied or use the bundled ones
 	const characterMaps =  customDefs || charDefinitions();
 	const  { charWidth } = characterMaps;
@@ -40,18 +40,24 @@ export default function renderText(width, pixelScale, canvasRef, inputText, colo
 	ctx.canvas.height = height * pixelScale;
 
 	wordWrap ? writeWords() : writeString(inputText, textPixels);
-  animate ? animatedDraw() : draw(width, textPixels, ctx, pixelScale);
+  animate ? await animatedDraw() : draw(width, textPixels, ctx, pixelScale);
+	setDone(true);
+	return;
 
-	function animatedDraw() {
-		const timerId = setInterval(() => {
-			if (currentPermittedWidth >= width) {
-				clearInterval(timerId);
-				draw(width, textPixels, ctx, pixelScale);
-			} else {
-				currentPermittedWidth +=1;
-				draw(currentPermittedWidth, textPixels, ctx, pixelScale);
-			}
-		},20)
+	async function animatedDraw() {
+		return new Promise(resolve => {
+			const timerId = setInterval(() => {
+				if (currentPermittedWidth >= width) {
+					clearInterval(timerId);
+					draw(width, textPixels, ctx, pixelScale);
+					resolve('animation done')
+				} else {
+					currentPermittedWidth +=1;
+					draw(currentPermittedWidth, textPixels, ctx, pixelScale);
+				}
+			},20)
+
+		})
 	}
 
 	function getWordStarts(inputText) {
@@ -93,7 +99,8 @@ export default function renderText(width, pixelScale, canvasRef, inputText, colo
 			Array.from(words[i]).forEach(char => {
 				if (characterMaps.hasOwnProperty(char)) {
 					if (!color) {
-						channels = generateRandomColors()
+						// channels = generateRandomColors()
+						channels = generatePalette()
 					} else {
 						channels = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
 					}
@@ -116,13 +123,15 @@ export default function renderText(width, pixelScale, canvasRef, inputText, colo
 
 			if (characterMaps.hasOwnProperty(char)) {
 				if (!color) {
-					channels = generateRandomColors()
+					// channels = generateRandomColors()
+					channels = generatePalette()
 				} else {
-					channels = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+
+					channels = generatePalette({originColor: color});
 				}
 				writeChar(char, textPixels, position, channels);
 			} else {
-				writeChar(" ", textPixels, position);
+				writeChar(" ", textPixels, position, channels);
 			}
 			remaining--;
 			if (remaining === 0) {
@@ -134,7 +143,7 @@ export default function renderText(width, pixelScale, canvasRef, inputText, colo
 		}
 	}
 
-	function writeChar(char, textPixels, position, color) {
+	function writeChar(char, textPixels, position, channels) {
 		// for defs that include expresions relative to width, like:
 		// { '1': [1, 2, width+2, (width*2)+2, (width*3)+2, (width*4)+1, (width*4)+2, (width*4)+3] }
 		// use the original method:
@@ -152,10 +161,21 @@ export default function renderText(width, pixelScale, canvasRef, inputText, colo
 		// should be easier to store and generate programatically
 		// but if the character width changes, we'll need new defs and need to pass in the charWidth to this function
 
-		characterMaps[char.toUpperCase()].forEach(charPixel => {
+		const randomNum = Math.random()
+		const palette = characterMaps[char.toUpperCase()]
+			.map(point => generatePalette({channelDeviationLimit: 100}))
+			.sort((a, b) => a.reduce((acc, elem) => acc + elem, 0) - b.reduce((acc, elem) => acc + elem, 0))
+
+		const arrToRGBString = (channels) => {
+			return `rgb(${channels[0]}, ${channels[1]}, ${channels[2]})`;
+		}
+
+		characterMaps[char.toUpperCase()].forEach((charPixel,i) => {
 			const charRow = Math.floor(charPixel / charWidth)
 			const offset = charPixel % charWidth;
-			textPixels[(charRow * width) + offset + position] = color;
+			// textPixels[(charRow * width) + offset + position] = color;
+			// textPixels[(charRow * width) + offset + position] = generatePalette();
+			textPixels[(charRow * width) + offset + position] = randomNum < 0.85 ? arrToRGBString(channels) : arrToRGBString(palette[i]);
 		});
 	}
 
@@ -189,4 +209,31 @@ export default function renderText(width, pixelScale, canvasRef, inputText, colo
       return color;
   }
 
+	function generatePalette(customOptions) {
+		const options = {channelDeviationLimit: 130, originColor: color || [205, 0, 190], channelMax: 255, channelMin: 10, ...customOptions}
+		// upperLimit and lowerLimit limit the absolute values of a channel
+
+		const { channelDeviationLimit, originColor, channelMax, channelMin } = options
+		const random = () => {
+			const polarity = Math.random() > 0.5 ? -1 : 1
+			return Math.floor(Math.random() * channelDeviationLimit) * polarity;
+		}
+			const [Ror, Gor, Bor ] = originColor
+			const mod = random();
+
+			const getAdjustedChannel = (channelVal, modVal) => {
+				if (channelVal + modVal < channelMin) return channelMin;
+				if (channelVal + modVal > channelMax) return channelMax;
+				return channelVal + modVal;
+			}
+
+			const R = getAdjustedChannel(Ror, mod)
+      const G = getAdjustedChannel(Gor, mod)
+      const B = getAdjustedChannel(Bor, mod)
+
+      return [R, G, B];
+
+	}
+
 }
+//add a function for a color palette.
