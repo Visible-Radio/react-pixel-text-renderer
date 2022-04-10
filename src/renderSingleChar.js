@@ -1,59 +1,141 @@
-// old bundled defs
-import { charDefinitions } from "./definitions2";
+function setup({ canvasRef, rows, columns, scale, charWidth, gridSpace }) {
+  // set up the canvas
+  // we need to alot for space between rows and columns when sizing the canvas
+  const canvas = canvasRef.current;
+  if (canvas === null || canvas === undefined) {
+    throw new Error("couldn't get canvas element");
+  }
+  const ctx = canvas.getContext("2d");
+  ctx.canvas.width = columns * scale * charWidth + (columns - 1) * gridSpace;
+  ctx.canvas.height = rows * scale * charWidth + (rows - 1) * gridSpace;
 
-export default async function renderText({
+  return { canvas, ctx };
+}
+
+function makeChar({ char, index, gridWidth }) {
+  return {
+    char,
+    x: null,
+    y: null,
+    row: null,
+    col: null,
+    frame: null,
+  };
+}
+
+function makeGrid({ width, heigth, scale, text }) {
+  // based on the given charWidth, width and pixel scale, determine how many rows and columns are needed
+}
+
+export function textRenderer({
+  gridWidth,
+  height,
+  scale,
+  canvasRef,
+  text,
+  color,
+  defs,
+}) {
+  const { charWidth } = defs;
+  const columns = Math.floor(gridWidth / charWidth);
+  const { words } = makeWords(text, columns);
+  const rows = words.slice(-1)[0].row + 1;
+  const { canvas, ctx } = setup({
+    canvasRef,
+    rows,
+    columns,
+    scale,
+    charWidth,
+    gridSpace: scale,
+  });
+  console.log(canvas.width);
+
+  console.log({ columns });
+}
+
+function makeWords(text, columns) {
+  // each word in the resulting array will have a row and column value
+
+  const words = text.split(" ");
+  return words.reduce(
+    (acc, word) => {
+      // need to add handling for words that are longer than the column is wide
+      if (acc.remaining >= word.length) {
+        acc.words.push({
+          word,
+          row: acc.row,
+          col: acc.col,
+        });
+        acc.remaining -= word.length + 1;
+        acc.col += word.length + 1;
+      } else {
+        // start a new line
+        acc.row += 1;
+        acc.col = 0;
+        acc.words.push({
+          word,
+          row: acc.row,
+          col: acc.col,
+        });
+        acc.remaining = columns - (word.length + 1);
+        acc.col += word.length + 1;
+      }
+      return acc;
+    },
+    {
+      words: [],
+      remaining: columns,
+      row: 0,
+      col: 0,
+    }
+  );
+}
+
+function gridPositionFromIndex({ index, columns }) {
+  const row = Math.floor(index / columns);
+  const col = index % (row * columns);
+  return {
+    col,
+    row,
+  };
+}
+
+export default async function renderSingleChar({
   width,
   pixelScale,
   canvasRef,
-  inputText,
+  inputChar,
   color,
-  animate = false,
   wordWrap = false,
   customDefs,
 }) {
   // import custom defs if supplied or use the bundled ones
-  const characterMaps = customDefs || charDefinitions();
+  const characterMaps = customDefs;
   const { charWidth } = characterMaps;
-
-  // calculate the closest appropriate width based on the input width
-  const remainder = width % (charWidth + 1);
-  if (remainder === 0) {
-    width = width - 1;
-  } else if (remainder !== 0) {
-    width = width - remainder - 1;
-  }
-  if (width < charWidth) {
-    console.log(`width must be at least ${charWidth + 1}`);
-    return;
-  }
 
   let currentPermittedWidth = 0;
   let textPixels = [];
   const horizontalChars = parseInt(width / (charWidth + 1) + 1, 10);
-  const { starts, words, wastedCharSpaces } = getWordStarts(inputText);
+  const { starts, words, wastedCharSpaces } = getWordStarts(inputChar);
 
   // calculate how many rows needed for the given input text if we're using charWrap or wordWrap
   const rows = Math.ceil(
-    (inputText.length + (() => (wordWrap ? wastedCharSpaces : 0))()) /
+    (inputChar.length + (() => (wordWrap ? wastedCharSpaces : 0))()) /
       horizontalChars
   );
   // calculate pixel grid height based on input text
   const height = rows * charWidth + (rows - 1);
 
   // set up the canvas
-  const canvas = canvasRef.current;
-  if (canvas === null || canvas === undefined) {
-    console.log("couldn't get canvas element");
-    return;
-  }
-  const ctx = canvas.getContext("2d");
-  ctx.canvas.width = width * pixelScale;
-  ctx.canvas.height = height * pixelScale;
+  const { canvas, ctx } = setup({
+    canvasRef,
+    height,
+    width,
+    scale: pixelScale,
+  });
 
-  wordWrap ? writeWords() : writeString(inputText, textPixels);
-  animate ? await animatedDraw() : draw(width, textPixels, ctx, pixelScale);
-
-  return;
+  writeString(inputChar, textPixels);
+  await animatedDraw();
 
   async function animatedDraw() {
     return new Promise((resolve) => {
@@ -66,15 +148,15 @@ export default async function renderText({
           currentPermittedWidth += 1;
           draw(currentPermittedWidth, textPixels, ctx, pixelScale);
         }
-      }, 20);
+      }, 50);
     });
   }
 
-  function getWordStarts(inputText) {
+  function getWordStarts(inputChar) {
     let startPosition = 0;
     let remaining = horizontalChars;
     let wastedCharSpaces = 0;
-    const words = inputText.toUpperCase().split(" ");
+    const words = inputChar.toUpperCase().split(" ");
 
     // create an array with the position of the start of each word
     const starts = [];
@@ -124,17 +206,16 @@ export default async function renderText({
     });
   }
 
-  function writeString(inputText, textPixels) {
+  function writeString(inputChar, textPixels) {
     let remaining = horizontalChars;
     let position = 0;
     let char;
     let channels;
-    for (let i = 0; i < inputText.length; i++) {
-      char = `${inputText[i].toUpperCase()}`;
+    for (let i = 0; i < inputChar.length; i++) {
+      char = `${inputChar[i].toUpperCase()}`;
 
       if (characterMaps.hasOwnProperty(char)) {
         if (!color) {
-          // channels = generateRandomColors()
           channels = generatePalette();
         } else {
           channels = generatePalette({ originColor: color });
@@ -154,23 +235,6 @@ export default async function renderText({
   }
 
   function writeChar(char, textPixels, position, channels) {
-    // for defs that include expresions relative to width, like:
-    // { '1': [1, 2, width+2, (width*2)+2, (width*3)+2, (width*4)+1, (width*4)+2, (width*4)+3] }
-    // use the original method:
-    // characterMaps[char.toUpperCase()].forEach(charPixel => textPixels[charPixel + position] = color);
-
-    // for absolute coordinates like:
-    // { '1': [1, 2, 7, 12, 17, 21, 22, 23] }
-    // we'll need to infer when to add the width of the canvas to them
-    // take a coordinate
-    // divide by the charater width (5 in this case)
-    // round the result down
-    // Math.floor(coord / charWidth) === row
-    // coord % charWidth === the position inside the row
-    // this will allow us to store char defs as numbers, not as numbers mixed with expressions
-    // should be easier to store and generate programatically
-    // but if the character width changes, we'll need new defs and need to pass in the charWidth to this function
-
     const randomNum = Math.random();
     const palette = characterMaps[char.toUpperCase()]
       .map((point) => generatePalette({ channelDeviationLimit: 100 }))
@@ -187,8 +251,6 @@ export default async function renderText({
     characterMaps[char.toUpperCase()].forEach((charPixel, i) => {
       const charRow = Math.floor(charPixel / charWidth);
       const offset = charPixel % charWidth;
-      // textPixels[(charRow * width) + offset + position] = color;
-      // textPixels[(charRow * width) + offset + position] = generatePalette();
       textPixels[charRow * width + offset + position] =
         randomNum < 0.85
           ? arrToRGBString(channels)
@@ -218,49 +280,47 @@ export default async function renderText({
       }
     }
   }
-
-  function generateRandomColors() {
-    const random = () => {
-      const num = Math.floor(Math.random() * (350 - 50) + 50);
-      return num > 255 ? 255 : num;
-    };
-    const R = random();
-    const G = random();
-    const B = random();
-    const color = `rgb(${R}, ${G}, ${B})`;
-    return color;
-  }
-
-  function generatePalette(customOptions) {
-    const options = {
-      channelDeviationLimit: 130,
-      originColor: color || [205, 0, 190],
-      channelMax: 255,
-      channelMin: 10,
-      ...customOptions,
-    };
-    // upperLimit and lowerLimit limit the absolute values of a channel
-
-    const { channelDeviationLimit, originColor, channelMax, channelMin } =
-      options;
-    const random = () => {
-      const polarity = Math.random() > 0.5 ? -1 : 1;
-      return Math.floor(Math.random() * channelDeviationLimit) * polarity;
-    };
-    const [Ror, Gor, Bor] = originColor;
-    const mod = random();
-
-    const getAdjustedChannel = (channelVal, modVal) => {
-      if (channelVal + modVal < channelMin) return channelMin;
-      if (channelVal + modVal > channelMax) return channelMax;
-      return channelVal + modVal;
-    };
-
-    const R = getAdjustedChannel(Ror, mod);
-    const G = getAdjustedChannel(Gor, mod);
-    const B = getAdjustedChannel(Bor, mod);
-
-    return [R, G, B];
-  }
 }
-//add a function for a color palette.
+
+function generateRandomColors() {
+  const random = () => {
+    const num = Math.floor(Math.random() * (350 - 50) + 50);
+    return num > 255 ? 255 : num;
+  };
+  const R = random();
+  const G = random();
+  const B = random();
+  const color = `rgb(${R}, ${G}, ${B})`;
+  return color;
+}
+
+function generatePalette(customOptions) {
+  const options = {
+    channelDeviationLimit: 130,
+    originColor: [205, 0, 190],
+    channelMax: 255,
+    channelMin: 10,
+    ...customOptions,
+  };
+  // upperLimit and lowerLimit limit the absolute values of a channel
+  const { channelDeviationLimit, originColor, channelMax, channelMin } =
+    options;
+  const random = () => {
+    const polarity = Math.random() > 0.5 ? -1 : 1;
+    return Math.floor(Math.random() * channelDeviationLimit) * polarity;
+  };
+  const [Ror, Gor, Bor] = originColor;
+  const mod = random();
+
+  const getAdjustedChannel = (channelVal, modVal) => {
+    if (channelVal + modVal < channelMin) return channelMin;
+    if (channelVal + modVal > channelMax) return channelMax;
+    return channelVal + modVal;
+  };
+
+  const R = getAdjustedChannel(Ror, mod);
+  const G = getAdjustedChannel(Gor, mod);
+  const B = getAdjustedChannel(Bor, mod);
+
+  return [R, G, B];
+}
