@@ -1,3 +1,5 @@
+// import { defs } from "./customDefs_charWidth_7.json";
+
 function setup({ canvasRef, rows, columns, scale, charWidth, gridSpace }) {
   // set up the canvas
   // we need to alot for space between rows and columns when sizing the canvas
@@ -12,19 +14,64 @@ function setup({ canvasRef, rows, columns, scale, charWidth, gridSpace }) {
   return { canvas, ctx };
 }
 
-function makeChar({ char, index, gridWidth }) {
-  return {
-    char,
-    x: null,
-    y: null,
-    row: null,
-    col: null,
-    frame: null,
-  };
+async function drawEachCharFrame({ charObj, ctx, canvas, charWidth, scale }) {
+  return new Promise(async (resolve) => {
+    console.log(charObj);
+    let last;
+    while (charObj.frameNum() < charWidth) {
+      const pixels = charObj.nextFrame();
+      if (last) {
+        //
+        clearFrame({ pixels: last, charObj, ctx, charWidth, scale });
+      }
+      await drawFrame({ pixels, charObj, ctx, charWidth, scale });
+      last = pixels;
+    }
+    resolve(undefined);
+  });
 }
 
-function makeGrid({ width, heigth, scale, text }) {
-  // based on the given charWidth, width and pixel scale, determine how many rows and columns are needed
+function drawFrame({ pixels, charObj, ctx, charWidth, scale }) {
+  return new Promise((resolve) => {
+    pixels.forEach(({ row: pxRow, col: pxCol }) => {
+      ctx.fillStyle = "rgb(255,0,190)";
+      ctx.fillRect(
+        charObj.col * scale * charWidth + pxCol * scale,
+        charObj.row * scale * charWidth + pxRow * scale + charObj.row * scale,
+        scale,
+        scale
+      );
+    });
+    setTimeout(() => resolve(undefined), 20);
+  });
+}
+
+function clearFrame({ pixels, charObj, ctx, charWidth, scale }) {
+  pixels.forEach(({ row: pxRow, col: pxCol }) => {
+    ctx.clearRect(
+      charObj.col * scale * charWidth + pxCol * scale,
+      charObj.row * scale * charWidth + pxRow * scale + charObj.row * scale,
+      scale,
+      scale
+    );
+  });
+}
+
+async function drawWord({ word, ctx, canvas, charWidth, scale }) {
+  return new Promise(async (resolve) => {
+    for (let c of word.chars) {
+      await drawEachCharFrame({ charObj: c, ctx, canvas, charWidth, scale });
+    }
+    resolve(undefined);
+  });
+}
+
+async function drawWords({ words, ctx, canvas, charWidth, scale }) {
+  return new Promise(async (resolve) => {
+    for (let word of words) {
+      await drawWord({ word, ctx, canvas, charWidth, scale });
+    }
+  });
 }
 
 export function textRenderer({
@@ -38,7 +85,7 @@ export function textRenderer({
 }) {
   const { charWidth } = defs;
   const columns = Math.floor(gridWidth / charWidth);
-  const { words } = makeWords(text, columns);
+  const { words } = makeWords(text, columns, defs);
   const rows = words.slice(-1)[0].row + 1;
   const { canvas, ctx } = setup({
     canvasRef,
@@ -48,12 +95,60 @@ export function textRenderer({
     charWidth,
     gridSpace: scale,
   });
-  console.log(canvas.width);
 
-  console.log({ columns });
+  drawWords({ words, ctx, canvas, charWidth, scale });
 }
 
-function makeWords(text, columns) {
+function makeChars({ word, row, col, defs }) {
+  return word.split("").map((c, i) => {
+    let frameNum = 0;
+    return {
+      char: c,
+      row,
+      col: col + i,
+      x: null,
+      y: null,
+      def: defs[c],
+      charWidth: defs.charWidth,
+      frameNum: function () {
+        return frameNum;
+      },
+      frameState: function () {
+        return getFrameState(frameNum, this.def, this.charWidth);
+      },
+      nextFrame: function () {
+        if (frameNum < defs.charWidth) {
+          const frame = getFrameState(frameNum, this.def, this.charWidth);
+          frameNum += 1;
+          return frame;
+        } else if (frameNum === defs.charWidth) {
+          frameNum = 0;
+          return getFrameState(frameNum, this.def, this.charWidth);
+        }
+      },
+    };
+  });
+}
+
+function getFrameState(frameNum, def, charWidth) {
+  // based one the frame num, apply a transformation to the def
+  // and return it as a new array
+  // this will be what gets drawn to the canvas for that character frame
+  const totalPoints = charWidth * (frameNum + 1);
+
+  return def.slice(0, totalPoints).reduce((acc, point) => {
+    const newPoint = gridPositionFromIndex({
+      index: point,
+      columns: frameNum + 1,
+    });
+    if (newPoint.row < charWidth) {
+      acc.push(newPoint);
+    }
+    return acc;
+  }, []);
+}
+
+function makeWords(text, columns, defs) {
   // each word in the resulting array will have a row and column value
 
   const words = text.split(" ");
@@ -65,6 +160,7 @@ function makeWords(text, columns) {
           word,
           row: acc.row,
           col: acc.col,
+          chars: makeChars({ word, row: acc.row, col: acc.col, defs }),
         });
         acc.remaining -= word.length + 1;
         acc.col += word.length + 1;
@@ -76,6 +172,7 @@ function makeWords(text, columns) {
           word,
           row: acc.row,
           col: acc.col,
+          chars: makeChars({ word, row: acc.row, col: acc.col, defs }),
         });
         acc.remaining = columns - (word.length + 1);
         acc.col += word.length + 1;
@@ -93,194 +190,14 @@ function makeWords(text, columns) {
 
 function gridPositionFromIndex({ index, columns }) {
   const row = Math.floor(index / columns);
-  const col = index % (row * columns);
+  const col = row === 0 ? index % (row + 1 * columns) : index % (row * columns);
   return {
     col,
     row,
   };
 }
 
-export default async function renderSingleChar({
-  width,
-  pixelScale,
-  canvasRef,
-  inputChar,
-  color,
-  wordWrap = false,
-  customDefs,
-}) {
-  // import custom defs if supplied or use the bundled ones
-  const characterMaps = customDefs;
-  const { charWidth } = characterMaps;
-
-  let currentPermittedWidth = 0;
-  let textPixels = [];
-  const horizontalChars = parseInt(width / (charWidth + 1) + 1, 10);
-  const { starts, words, wastedCharSpaces } = getWordStarts(inputChar);
-
-  // calculate how many rows needed for the given input text if we're using charWrap or wordWrap
-  const rows = Math.ceil(
-    (inputChar.length + (() => (wordWrap ? wastedCharSpaces : 0))()) /
-      horizontalChars
-  );
-  // calculate pixel grid height based on input text
-  const height = rows * charWidth + (rows - 1);
-
-  // set up the canvas
-  const { canvas, ctx } = setup({
-    canvasRef,
-    height,
-    width,
-    scale: pixelScale,
-  });
-
-  writeString(inputChar, textPixels);
-  await animatedDraw();
-
-  async function animatedDraw() {
-    return new Promise((resolve) => {
-      const timerId = setInterval(() => {
-        if (currentPermittedWidth >= width) {
-          clearInterval(timerId);
-          draw(width, textPixels, ctx, pixelScale);
-          resolve("animation done");
-        } else {
-          currentPermittedWidth += 1;
-          draw(currentPermittedWidth, textPixels, ctx, pixelScale);
-        }
-      }, 50);
-    });
-  }
-
-  function getWordStarts(inputChar) {
-    let startPosition = 0;
-    let remaining = horizontalChars;
-    let wastedCharSpaces = 0;
-    const words = inputChar.toUpperCase().split(" ");
-
-    // create an array with the position of the start of each word
-    const starts = [];
-
-    for (let i = 0; i < words.length; i++) {
-      if (remaining >= words[i].length) {
-        starts.push(startPosition);
-        startPosition += words[i].length * (charWidth + 1) + (charWidth + 1);
-        remaining -= words[i].length + 1;
-      } else {
-        wastedCharSpaces += remaining;
-        // jump to new line
-        startPosition +=
-          (width + 1) * charWidth + (remaining - 1) * (charWidth + 1);
-        starts.push(startPosition);
-        startPosition += words[i].length * (charWidth + 1) + (charWidth + 1);
-        remaining = horizontalChars;
-        remaining -= words[i].length + 1;
-      }
-    }
-    return {
-      starts,
-      words,
-      wastedCharSpaces,
-    };
-  }
-
-  function writeWords() {
-    let charPosition = 0;
-    let channels;
-    starts.forEach((startPosition, i) => {
-      charPosition = 0;
-      Array.from(words[i]).forEach((char) => {
-        if (characterMaps.hasOwnProperty(char)) {
-          if (!color) {
-            // channels = generateRandomColors()
-            channels = generatePalette();
-          } else {
-            channels = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-          }
-          writeChar(char, textPixels, startPosition + charPosition, channels);
-        } else {
-          writeChar(" ", textPixels, startPosition + charPosition);
-        }
-        charPosition += charWidth + 1;
-      });
-    });
-  }
-
-  function writeString(inputChar, textPixels) {
-    let remaining = horizontalChars;
-    let position = 0;
-    let char;
-    let channels;
-    for (let i = 0; i < inputChar.length; i++) {
-      char = `${inputChar[i].toUpperCase()}`;
-
-      if (characterMaps.hasOwnProperty(char)) {
-        if (!color) {
-          channels = generatePalette();
-        } else {
-          channels = generatePalette({ originColor: color });
-        }
-        writeChar(char, textPixels, position, channels);
-      } else {
-        writeChar(" ", textPixels, position, channels);
-      }
-      remaining--;
-      if (remaining === 0) {
-        remaining = horizontalChars;
-        position += (width + 1) * charWidth;
-      } else {
-        position += charWidth + 1;
-      }
-    }
-  }
-
-  function writeChar(char, textPixels, position, channels) {
-    const randomNum = Math.random();
-    const palette = characterMaps[char.toUpperCase()]
-      .map((point) => generatePalette({ channelDeviationLimit: 100 }))
-      .sort(
-        (a, b) =>
-          a.reduce((acc, elem) => acc + elem, 0) -
-          b.reduce((acc, elem) => acc + elem, 0)
-      );
-
-    const arrToRGBString = (channels) => {
-      return `rgb(${channels[0]}, ${channels[1]}, ${channels[2]})`;
-    };
-
-    characterMaps[char.toUpperCase()].forEach((charPixel, i) => {
-      const charRow = Math.floor(charPixel / charWidth);
-      const offset = charPixel % charWidth;
-      textPixels[charRow * width + offset + position] =
-        randomNum < 0.85
-          ? arrToRGBString(channels)
-          : arrToRGBString(palette[i]);
-    });
-  }
-
-  function draw(permittedWidth, textPixels, ctx, pixelScale) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // draw	a frame at a given permitted width
-    const pixelsToDraw = height * permittedWidth - 1;
-
-    outer: for (let column = 0; column < height; column++) {
-      for (let row = 0; row < permittedWidth; row++) {
-        // which pixel do I select from textPixels based on column and row?
-        let pixelIndex = row + column * permittedWidth;
-        if (pixelIndex > pixelsToDraw) break outer;
-        if (textPixels[pixelIndex] !== undefined) {
-          ctx.fillStyle = textPixels[pixelIndex];
-          ctx.fillRect(
-            row * pixelScale,
-            column * pixelScale,
-            pixelScale,
-            pixelScale
-          );
-        }
-      }
-    }
-  }
-}
+window.gridPositionFromIndex = gridPositionFromIndex;
 
 function generateRandomColors() {
   const random = () => {

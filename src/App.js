@@ -3,17 +3,17 @@ import "./App.css";
 import React from "react";
 import { useRef, useEffect } from "react";
 import { defs } from "./customDefs_cw_7";
-import renderSingleChar, { textRenderer } from "./renderSingleChar";
+import { textRenderer } from "./renderSingleChar";
 
 function App() {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     textRenderer({
-      gridWidth: 49,
-      scale: 5,
+      gridWidth: 80,
+      scale: 10,
       canvasRef,
-      text: "Hello World, it's me",
+      text: "hello world. how are you today".toUpperCase(),
       color: null,
       defs,
     });
