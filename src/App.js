@@ -10,11 +10,10 @@ function App() {
 
   useEffect(() => {
     textRenderer({
-      gridWidth: 80,
+      columns: 11,
       scale: 10,
       canvasRef,
-      text: "hello world. how are you today".toUpperCase(),
-      color: null,
+      text: "hello world how are you today".toUpperCase(),
       defs,
     });
   }, []);
