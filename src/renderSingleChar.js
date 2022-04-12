@@ -1,3 +1,9 @@
+/* TODO add an arg for sync / async - ie, if drawing in browser, we want to see the animation
+If drawing in node, we don't want to waste time displaying each frame
+Instead we want to generate each as quickly as possible to pass to the gif encoder 
+in this mode, we may need the top level interface to also accept a callback to be called
+each time a frame has been drawn, so it can be captured from the canvas*/
+
 export function textRenderer({ columns, scale, canvasRef, text, defs }) {
   const { charWidth } = defs;
   const { words } = makeWords(text, columns, defs);
