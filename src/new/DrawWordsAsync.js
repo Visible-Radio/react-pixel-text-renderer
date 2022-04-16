@@ -1,44 +1,49 @@
-export async function asyncDrawWords({ words, ctx, config }) {
+export async function asyncDrawWords({ state }) {
+  const { words } = state;
   return new Promise(async (resolve) => {
     for (let word of words) {
-      await drawWord({ word, ctx, config });
+      await drawWord({ word, state });
     }
     resolve(undefined);
   });
 }
 
-async function drawWord({ word, ctx, config }) {
+async function drawWord({ word, state }) {
   return new Promise(async (resolve) => {
     for (let c of word.chars) {
-      await drawEachCharFrame({ charObj: c, ctx, config });
+      await drawEachCharFrame({ charObj: c, state });
     }
     resolve(undefined);
   });
 }
 
-async function drawEachCharFrame({ charObj, ctx, config }) {
+async function drawEachCharFrame({ charObj, state }) {
+  const { config } = state;
   return new Promise(async (resolve) => {
-    if (charObj.row === config.displayRows + config.rowsScrolled()) {
+    if (charObj.row === config.displayRows + state.rowsScrolled()) {
       //
-      await config.scroll();
+      await state.scroll({ charObj });
     }
-
     let last;
     while (charObj.frameNum() < config.charWidth) {
       const pixels = charObj.nextFrame();
       if (last) {
         //
-        clearFrame({ pixels: last, charObj, ctx, config });
+        clearFrame({ pixels: last, charObj, state });
       }
-      await drawFrame({ pixels, charObj, ctx, config });
+      await drawFrame({ pixels, charObj, state });
       last = pixels;
     }
     resolve(undefined);
   });
 }
 
-function drawFrame({ pixels, charObj, ctx, config }) {
-  const { scale, charWidth, rowsScrolled } = config;
+function drawFrame({ pixels, charObj, state }) {
+  const {
+    ctx,
+    config: { scale, charWidth },
+    rowsScrolled,
+  } = state;
   return new Promise((resolve) => {
     pixels.forEach(({ row: pxRow, col: pxCol }) => {
       const rowGap = (charObj.row - rowsScrolled()) * scale;
@@ -58,8 +63,12 @@ function drawFrame({ pixels, charObj, ctx, config }) {
   });
 }
 
-function clearFrame({ pixels, charObj, ctx, config }) {
-  const { scale, charWidth, rowsScrolled } = config;
+function clearFrame({ pixels, charObj, state }) {
+  const {
+    ctx,
+    config: { scale, charWidth },
+    rowsScrolled,
+  } = state;
   pixels.forEach(({ row: pxRow, col: pxCol }) => {
     const rowGap = (charObj.row - rowsScrolled()) * scale;
     const colGap = charObj.col * scale;

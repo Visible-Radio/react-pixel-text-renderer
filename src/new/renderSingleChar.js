@@ -15,11 +15,8 @@ export function syncTextRenderer({ columns, scale, text, defs, displayRows }) {
     displayRows,
   });
 
-  asyncDrawWords({
-    words,
-    ctx,
-    config,
-  });
+  const state = makeState({ ctx, words, config });
+  asyncDrawWords({ state });
 }
 
 function makeWords(text, columns, defs) {
@@ -68,8 +65,6 @@ function makeChars({ word, row, col, defs }) {
       char: c,
       row,
       col: col + i,
-      x: null,
-      y: null,
       def: defs[c],
       charWidth: defs.charWidth,
       word() {
@@ -91,6 +86,13 @@ function makeChars({ word, row, col, defs }) {
           frameNum = 0;
           return getFrameState(frameNum, this.def, this.charWidth);
         }
+      },
+      applyScrollTransform(scrollFrameIndex) {
+        // every Y value in every char should be decremented by charWidth
+        // thereby moving that point up one display grid unit (not column)
+        return this.def.map(
+          (point) => point - this.charWidth * scrollFrameIndex
+        );
       },
     };
   });
@@ -123,6 +125,44 @@ function gridPositionFromIndex({ index, columns }) {
   };
 }
 
+function makeState({ words, ctx, config }) {
+  let rowsScrolled = 0;
+  return {
+    ctx,
+    words,
+    config,
+    rowsScrolled() {
+      return rowsScrolled;
+    },
+    async scroll({ charObj }) {
+      rowsScrolled += 1;
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      // grab all the words with rows < charObj.row
+      // we'll need to re-draw these
+      const scrollTheseWords = words.filter((word) => word.row < charObj.row);
+      console.log(scrollTheseWords);
+    },
+    unScroll() {
+      rowsScrolled -= 1;
+    },
+  };
+}
+
+async function scrollCanvas() {
+  // the most obvious thing would be to
+  // sample a region of the canvas
+  // clear the canvas
+  // paste the sample
+  // ===================================
+  // but could we do it differently ?
+  // perhaps grab all rows of words
+  // apply transformations to them
+  // clear the canvas
+  // draw the transformed words - without the interstitial char frames
+  // if the value ends up being less than 0, throw it away
+  //charObj would need another method: getScrollFrameAt(scroll value in display points)
+}
+
 function setupCanvas({
   canvas,
   totalRows,
@@ -142,7 +182,6 @@ function setupCanvas({
   ctx.canvas.height =
     displayRows * scale * charWidth + (displayRows - 1) * gridSpace;
 
-  let rowsScrolled = 0;
   return {
     ctx,
     config: {
@@ -152,15 +191,6 @@ function setupCanvas({
       scale,
       charWidth,
       gridSpace,
-      rowsScrolled() {
-        return rowsScrolled;
-      },
-      async scroll() {
-        rowsScrolled += 1;
-      },
-      unScroll() {
-        rowsScrolled -= 1;
-      },
     },
   };
 }
@@ -170,20 +200,4 @@ function makeCanvas() {
   const canvas = document.createElement("canvas");
   root.appendChild(canvas);
   return canvas;
-}
-
-async function scrollCanvas() {
-  // the most obvious thing would be to
-  // sample a region of the canvas
-  // clear the canvas
-  // paste the sample
-  // ===================================
-  // but could we do it differently ?
-  // perhaps grab all rows of words
-  // apply transformations to them
-  // clear the canvas
-  // draw the transformed words - without the interstitial char frames
-  // every Y value in every char should be decremented by charWidth
-  // if the value ends up being less than 0, throw it away
-  //charObj would need another method: getScrollFrameAt(scroll value in display points)
 }
