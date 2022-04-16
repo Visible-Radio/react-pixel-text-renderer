@@ -1,26 +1,20 @@
 import "./App.css";
-
-import React from "react";
-import { useRef, useEffect } from "react";
+import { useEffect } from "react";
 import { defs } from "./customDefs_cw_7";
-import { textRenderer } from "./renderSingleChar";
+import { syncTextRenderer } from "./new/renderSingleChar";
 
 function App() {
-  const canvasRef = useRef(null);
-
   useEffect(() => {
-    textRenderer({
+    syncTextRenderer({
       columns: 11,
-      scale: 10,
-      canvasRef,
-      text: "hello world how are you today".toUpperCase(),
+      displayRows: 3,
+      scale: 5,
+      text: "hello world how are you today. here is some more text".toUpperCase(),
       defs,
     });
   }, []);
 
-  return (
-    <canvas ref={canvasRef} className="TextRendererCanvasInternal"></canvas>
-  );
+  return null;
 }
 
 export default App;

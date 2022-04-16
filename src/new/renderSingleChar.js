@@ -1,23 +1,25 @@
-/* TODO add an arg for sync / async - ie, if drawing in browser, we want to see the animation
-If drawing in node, we don't want to waste time displaying each frame
-Instead we want to generate each as quickly as possible to pass to the gif encoder 
-in this mode, we may need the top level interface to also accept a callback to be called
-each time a frame has been drawn, so it can be captured from the canvas*/
+import { asyncDrawWords } from "./DrawWordsAsync";
+import { syncDrawWords } from "./DrawWordsSync";
 
-export function textRenderer({ columns, scale, canvasRef, text, defs }) {
+export function syncTextRenderer({ columns, scale, text, defs, displayRows }) {
   const { charWidth } = defs;
   const { words } = makeWords(text, columns, defs);
-  const rows = words.slice(-1)[0].row + 1;
-  const ctx = setupCanvas({
-    canvasRef,
-    rows,
+  const totalRows = words.slice(-1)[0].row + 1;
+  const { ctx, config } = setupCanvas({
+    canvas: makeCanvas(),
+    totalRows,
     columns,
     scale,
     charWidth,
     gridSpace: scale,
+    displayRows,
   });
 
-  drawWords({ words, ctx, charWidth, scale });
+  asyncDrawWords({
+    words,
+    ctx,
+    config,
+  });
 }
 
 function makeWords(text, columns, defs) {
@@ -70,13 +72,17 @@ function makeChars({ word, row, col, defs }) {
       y: null,
       def: defs[c],
       charWidth: defs.charWidth,
-      frameNum: function () {
+      word() {
+        // provide a reference to the associated word
+        return word;
+      },
+      frameNum() {
         return frameNum;
       },
-      frameState: function () {
+      frameState() {
         return getFrameState(frameNum, this.def, this.charWidth);
       },
-      nextFrame: function () {
+      nextFrame() {
         if (frameNum < defs.charWidth) {
           const frame = getFrameState(frameNum, this.def, this.charWidth);
           frameNum += 1;
@@ -118,85 +124,66 @@ function gridPositionFromIndex({ index, columns }) {
 }
 
 function setupCanvas({
-  canvasRef,
-  rows,
+  canvas,
+  totalRows,
   columns,
   scale,
   charWidth,
   gridSpace,
+  displayRows,
 }) {
   // set up the canvas
   // we need to alot for space between rows and columns when sizing the canvas
-  const canvas = canvasRef.current;
   if (canvas === null || canvas === undefined) {
     throw new Error("couldn't get canvas element");
   }
   const ctx = canvas.getContext("2d");
   ctx.canvas.width = columns * scale * charWidth + (columns - 1) * gridSpace;
-  ctx.canvas.height = rows * scale * charWidth + (rows - 1) * gridSpace;
+  ctx.canvas.height =
+    displayRows * scale * charWidth + (displayRows - 1) * gridSpace;
 
-  return ctx;
-}
-
-async function drawWords({ words, ctx, charWidth, scale }) {
-  return new Promise(async (resolve) => {
-    for (let word of words) {
-      await drawWord({ word, ctx, charWidth, scale });
-    }
-  });
-}
-
-async function drawWord({ word, ctx, charWidth, scale }) {
-  return new Promise(async (resolve) => {
-    for (let c of word.chars) {
-      await drawEachCharFrame({ charObj: c, ctx, charWidth, scale });
-    }
-    resolve(undefined);
-  });
-}
-
-async function drawEachCharFrame({ charObj, ctx, charWidth, scale }) {
-  return new Promise(async (resolve) => {
-    let last;
-    while (charObj.frameNum() < charWidth) {
-      const pixels = charObj.nextFrame();
-      if (last) {
-        //
-        clearFrame({ pixels: last, charObj, ctx, charWidth, scale });
-      }
-      await drawFrame({ pixels, charObj, ctx, charWidth, scale });
-      last = pixels;
-    }
-    resolve(undefined);
-  });
-}
-
-function drawFrame({ pixels, charObj, ctx, charWidth, scale }) {
-  return new Promise((resolve) => {
-    pixels.forEach(({ row: pxRow, col: pxCol }) => {
-      const rowGap = charObj.row * scale;
-      const colGap = charObj.col * scale;
-      ctx.fillStyle = "rgb(255,0,190)";
-      ctx.fillRect(
-        charObj.col * scale * charWidth + pxCol * scale + colGap,
-        charObj.row * scale * charWidth + pxRow * scale + rowGap,
-        scale,
-        scale
-      );
-    });
-    setTimeout(() => resolve(undefined), 20);
-  });
-}
-
-function clearFrame({ pixels, charObj, ctx, charWidth, scale }) {
-  pixels.forEach(({ row: pxRow, col: pxCol }) => {
-    const rowGap = charObj.row * scale;
-    const colGap = charObj.col * scale;
-    ctx.clearRect(
-      charObj.col * scale * charWidth + pxCol * scale + colGap,
-      charObj.row * scale * charWidth + pxRow * scale + rowGap,
+  let rowsScrolled = 0;
+  return {
+    ctx,
+    config: {
+      totalRows,
+      columns,
+      displayRows,
       scale,
-      scale
-    );
-  });
+      charWidth,
+      gridSpace,
+      rowsScrolled() {
+        return rowsScrolled;
+      },
+      async scroll() {
+        rowsScrolled += 1;
+      },
+      unScroll() {
+        rowsScrolled -= 1;
+      },
+    },
+  };
+}
+
+function makeCanvas() {
+  const root = document.getElementById("root");
+  const canvas = document.createElement("canvas");
+  root.appendChild(canvas);
+  return canvas;
+}
+
+async function scrollCanvas() {
+  // the most obvious thing would be to
+  // sample a region of the canvas
+  // clear the canvas
+  // paste the sample
+  // ===================================
+  // but could we do it differently ?
+  // perhaps grab all rows of words
+  // apply transformations to them
+  // clear the canvas
+  // draw the transformed words - without the interstitial char frames
+  // every Y value in every char should be decremented by charWidth
+  // if the value ends up being less than 0, throw it away
+  //charObj would need another method: getScrollFrameAt(scroll value in display points)
 }
