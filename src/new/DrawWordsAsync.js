@@ -26,32 +26,34 @@ async function drawEachCharFrame({ charObj, state }) {
     }
     let last;
     while (charObj.frameNum() < config.charWidth) {
-      const pixels = charObj.nextFrame();
+      const charPoints = charObj.nextFrame();
+
       if (last) {
         //
-        clearFrame({ pixels: last, charObj, state });
+        clearFrame({ charPoints: last, charObj, state });
       }
-      await drawFrame({ pixels, charObj, state });
-      last = pixels;
+      await drawFrame({ charPoints, charObj, state });
+      last = charPoints;
     }
+    charObj.setFrameNum(config.charWidth - 1);
     resolve(undefined);
   });
 }
 
-function drawFrame({ pixels, charObj, state }) {
+export function drawFrame({ charPoints, charObj, state }) {
   const {
     ctx,
     config: { scale, charWidth },
     rowsScrolled,
   } = state;
   return new Promise((resolve) => {
-    pixels.forEach(({ row: pxRow, col: pxCol }) => {
+    charPoints.forEach(({ row: charPointY, col: charPointX }) => {
       const rowGap = (charObj.row - rowsScrolled()) * scale;
       const colGap = charObj.col * scale;
-      const pxX = charObj.col * scale * charWidth + pxCol * scale + colGap;
+      const pxX = charObj.col * scale * charWidth + charPointX * scale + colGap;
       const pxY =
         (charObj.row - rowsScrolled()) * scale * charWidth +
-        pxRow * scale +
+        charPointY * scale +
         rowGap;
       const pxSizeX = scale;
       const pxSizeY = scale;
@@ -63,19 +65,19 @@ function drawFrame({ pixels, charObj, state }) {
   });
 }
 
-function clearFrame({ pixels, charObj, state }) {
+export function clearFrame({ charPoints, charObj, state }) {
   const {
     ctx,
     config: { scale, charWidth },
     rowsScrolled,
   } = state;
-  pixels.forEach(({ row: pxRow, col: pxCol }) => {
+  charPoints.forEach(({ row: charPointY, col: charPointX }) => {
     const rowGap = (charObj.row - rowsScrolled()) * scale;
     const colGap = charObj.col * scale;
     ctx.clearRect(
-      charObj.col * scale * charWidth + pxCol * scale + colGap,
+      charObj.col * scale * charWidth + charPointX * scale + colGap,
       (charObj.row - rowsScrolled()) * scale * charWidth +
-        pxRow * scale +
+        charPointY * scale +
         rowGap,
       scale,
       scale

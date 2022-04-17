@@ -1,4 +1,4 @@
-import { asyncDrawWords } from "./DrawWordsAsync";
+import { asyncDrawWords, clearFrame, drawFrame } from "./DrawWordsAsync";
 import { syncDrawWords } from "./DrawWordsSync";
 
 export function syncTextRenderer({ columns, scale, text, defs, displayRows }) {
@@ -87,14 +87,72 @@ function makeChars({ word, row, col, defs }) {
           return getFrameState(frameNum, this.def, this.charWidth);
         }
       },
+      lastFrame() {
+        getFrameState(this.charWidth - 1, this.def, this.charWidth);
+      },
+      setFrameNum(val) {
+        frameNum = val;
+      },
       applyScrollTransform(scrollFrameIndex) {
         // every Y value in every char should be decremented by charWidth
         // thereby moving that point up one display grid unit (not column)
-        return this.def.map(
-          (point) => point - this.charWidth * scrollFrameIndex
-        );
+        const newDef = this.def.map((point) => {
+          const scrolledPoint = point - this.charWidth * scrollFrameIndex;
+          return gridPositionFromIndex({
+            index: scrolledPoint,
+            columns: this.charWidth,
+            char: this.char,
+          });
+        });
+
+        return newDef;
       },
     };
+  });
+}
+
+function gridPositionFromIndex({ index, columns, char }) {
+  if (index >= 0) {
+    const row = Math.floor(index / columns);
+    const col = index % columns;
+    return {
+      col,
+      row,
+    };
+  }
+
+  if (index < 0) {
+    const row = Math.floor(index / columns);
+    const col =
+      index % columns === 0 ? index % columns : (index % columns) + columns;
+    return {
+      col,
+      row,
+    };
+  }
+}
+
+async function drawScrollWords({ state }) {
+  const { ctx } = state;
+  let scrollFrameIndex = 0;
+  while (scrollFrameIndex < state.config.charWidth + 2) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    await drawScrollFrame({ state, scrollFrameIndex });
+    scrollFrameIndex++;
+  }
+}
+
+async function drawScrollFrame({ state, scrollFrameIndex }) {
+  return new Promise(async (resolve) => {
+    const { words } = state;
+    for (let word of words) {
+      for (let charObj of word.chars) {
+        const charPoints = charObj.applyScrollTransform(scrollFrameIndex);
+
+        drawFrame({ charPoints, charObj, state });
+      }
+    }
+    setTimeout(() => resolve(undefined), 30);
   });
 }
 
@@ -116,18 +174,9 @@ function getFrameState(frameNum, def, charWidth) {
   }, []);
 }
 
-function gridPositionFromIndex({ index, columns }) {
-  const row = Math.floor(index / columns);
-  const col = row === 0 ? index % (row + 1 * columns) : index % (row * columns);
-  return {
-    col,
-    row,
-  };
-}
-
 function makeState({ words, ctx, config }) {
   let rowsScrolled = 0;
-  return {
+  const state = {
     ctx,
     words,
     config,
@@ -135,32 +184,18 @@ function makeState({ words, ctx, config }) {
       return rowsScrolled;
     },
     async scroll({ charObj }) {
-      rowsScrolled += 1;
-      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
       // grab all the words with rows < charObj.row
       // we'll need to re-draw these
       const scrollTheseWords = words.filter((word) => word.row < charObj.row);
-      console.log(scrollTheseWords);
+      await drawScrollWords({ state: { ...this, words: scrollTheseWords } });
+      rowsScrolled += 1;
     },
     unScroll() {
       rowsScrolled -= 1;
     },
   };
-}
 
-async function scrollCanvas() {
-  // the most obvious thing would be to
-  // sample a region of the canvas
-  // clear the canvas
-  // paste the sample
-  // ===================================
-  // but could we do it differently ?
-  // perhaps grab all rows of words
-  // apply transformations to them
-  // clear the canvas
-  // draw the transformed words - without the interstitial char frames
-  // if the value ends up being less than 0, throw it away
-  //charObj would need another method: getScrollFrameAt(scroll value in display points)
+  return state;
 }
 
 function setupCanvas({

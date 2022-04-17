@@ -6,10 +6,10 @@ import { syncTextRenderer } from "./new/renderSingleChar";
 function App() {
   useEffect(() => {
     syncTextRenderer({
-      columns: 11,
-      displayRows: 3,
+      columns: 9,
+      displayRows: 5,
       scale: 5,
-      text: "hello world how are you today. here is some more text".toUpperCase(),
+      text: "hello world whats cookin hello world whats cookin".toUpperCase(),
       defs,
     });
   }, []);
