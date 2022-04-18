@@ -84,3 +84,27 @@ export function clearFrame({ charPoints, charObj, state }) {
     );
   });
 }
+
+export async function drawScrollWords({ state }) {
+  const { ctx } = state;
+  let scrollFrameIndex = 0;
+  while (scrollFrameIndex < state.config.charWidth + 2) {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    await drawScrollFrame({ state, scrollFrameIndex });
+    scrollFrameIndex++;
+  }
+}
+
+export async function drawScrollFrame({ state, scrollFrameIndex }) {
+  return new Promise(async (resolve) => {
+    const { words } = state;
+    for (let word of words) {
+      for (let charObj of word.chars) {
+        const charPoints = charObj.applyScrollTransform(scrollFrameIndex);
+
+        drawFrame({ charPoints, charObj, state });
+      }
+    }
+    setTimeout(() => resolve(undefined), 30);
+  });
+}

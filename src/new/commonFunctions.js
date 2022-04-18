@@ -1,25 +1,7 @@
-import { asyncDrawWords, clearFrame, drawFrame } from "./DrawWordsAsync";
-import { syncDrawWords } from "./DrawWordsSync";
+import { drawScrollWords } from "./asyncDrawingFunctions";
+import { drawScrollWordsSync } from "./syncDrawingFunctions";
 
-export function syncTextRenderer({ columns, scale, text, defs, displayRows }) {
-  const { charWidth } = defs;
-  const { words } = makeWords(text, columns, defs);
-  const totalRows = words.slice(-1)[0].row + 1;
-  const { ctx, config } = setupCanvas({
-    canvas: makeCanvas(),
-    totalRows,
-    columns,
-    scale,
-    charWidth,
-    gridSpace: scale,
-    displayRows,
-  });
-
-  const state = makeState({ ctx, words, config });
-  asyncDrawWords({ state });
-}
-
-function makeWords(text, columns, defs) {
+export function makeWords(text, columns, defs) {
   // each word in the resulting array will have a row and column value
   const words = text.split(" ");
   return words.reduce(
@@ -58,7 +40,7 @@ function makeWords(text, columns, defs) {
   );
 }
 
-function makeChars({ word, row, col, defs }) {
+export function makeChars({ word, row, col, defs }) {
   return word.split("").map((c, i) => {
     let frameNum = 0;
     return {
@@ -111,7 +93,7 @@ function makeChars({ word, row, col, defs }) {
   });
 }
 
-function gridPositionFromIndex({ index, columns, char }) {
+export function gridPositionFromIndex({ index, columns, char }) {
   if (index >= 0) {
     const row = Math.floor(index / columns);
     const col = index % columns;
@@ -132,30 +114,6 @@ function gridPositionFromIndex({ index, columns, char }) {
   }
 }
 
-async function drawScrollWords({ state }) {
-  const { ctx } = state;
-  let scrollFrameIndex = 0;
-  while (scrollFrameIndex < state.config.charWidth + 2) {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    await drawScrollFrame({ state, scrollFrameIndex });
-    scrollFrameIndex++;
-  }
-}
-
-async function drawScrollFrame({ state, scrollFrameIndex }) {
-  return new Promise(async (resolve) => {
-    const { words } = state;
-    for (let word of words) {
-      for (let charObj of word.chars) {
-        const charPoints = charObj.applyScrollTransform(scrollFrameIndex);
-
-        drawFrame({ charPoints, charObj, state });
-      }
-    }
-    setTimeout(() => resolve(undefined), 30);
-  });
-}
-
 function getFrameState(frameNum, def, charWidth) {
   // based one the frame num, apply a transformation to the def
   // and return it as a new array
@@ -174,7 +132,7 @@ function getFrameState(frameNum, def, charWidth) {
   }, []);
 }
 
-function makeState({ words, ctx, config }) {
+export function makeStateAsync({ words, ctx, config }) {
   let rowsScrolled = 0;
   const state = {
     ctx,
@@ -190,15 +148,33 @@ function makeState({ words, ctx, config }) {
       await drawScrollWords({ state: { ...this, words: scrollTheseWords } });
       rowsScrolled += 1;
     },
-    unScroll() {
-      rowsScrolled -= 1;
+  };
+
+  return state;
+}
+
+export function makeStateSync({ words, ctx, config }) {
+  let rowsScrolled = 0;
+  const state = {
+    ctx,
+    words,
+    config,
+    rowsScrolled() {
+      return rowsScrolled;
+    },
+    scroll({ charObj }) {
+      // grab all the words with rows < charObj.row
+      // we'll need to re-draw these
+      const scrollTheseWords = words.filter((word) => word.row < charObj.row);
+      drawScrollWordsSync({ state: { ...this, words: scrollTheseWords } });
+      rowsScrolled += 1;
     },
   };
 
   return state;
 }
 
-function setupCanvas({
+export function setupCanvas({
   canvas,
   totalRows,
   columns,
@@ -230,7 +206,7 @@ function setupCanvas({
   };
 }
 
-function makeCanvas() {
+export function makeCanvas() {
   const root = document.getElementById("root");
   const canvas = document.createElement("canvas");
   root.appendChild(canvas);
