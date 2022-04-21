@@ -1,13 +1,14 @@
-import { asyncDrawWords } from "./asyncDrawingFunctions";
+import { asyncDrawWords } from './asyncDrawingFunctions.js';
 import {
   makeCanvas,
   makeStateAsync,
   makeStateSync,
   makeWords,
   setupCanvas,
-} from "./commonFunctions";
-import { syncDrawWords } from "./syncDrawingFunctions";
+} from './commonFunctions.js';
+import { syncDrawWords } from './syncDrawingFunctions.js';
 
+// For use in the browser
 export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
   const { charWidth } = defs;
   const { words } = makeWords(text, columns, defs);
@@ -18,13 +19,15 @@ export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
     columns,
     scale,
     charWidth,
-    gridSpace: scale,
+    // need gridSpaceX and gridSpaceY
+    gridSpace: scale * 3, // gridSpace should always be a multiple of scale
     displayRows,
   });
   const state = makeStateAsync({ ctx, words, config });
   asyncDrawWords({ state });
 }
 
+// For Debugging in the browser - Creates a canvas for each frame and appends it to the DOM
 export function syncTextRenderer({ columns, scale, text, defs, displayRows }) {
   const { charWidth } = defs;
   const { words } = makeWords(text, columns, defs);
@@ -41,7 +44,6 @@ export function syncTextRenderer({ columns, scale, text, defs, displayRows }) {
   const state = makeStateSync({ ctx, words, config });
 
   state.config.snapshot = () => {
-    console.log("frame done");
     const { ctx: newFrameCanvas } = setupCanvas({
       canvas: makeCanvas(),
       totalRows,
@@ -58,7 +60,3 @@ export function syncTextRenderer({ columns, scale, text, defs, displayRows }) {
     state,
   });
 }
-
-/* 
-destCtx.drawImage(sourceCanvas, 0, 0);
-*/

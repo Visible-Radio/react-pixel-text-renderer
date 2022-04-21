@@ -1,4 +1,4 @@
-export function syncDrawWords({ state }) {
+function syncDrawWords({ state }) {
   const { words } = state;
   for (let word of words) {
     drawWord({ word, state });
@@ -32,16 +32,16 @@ function drawEachCharFrame({ charObj, state }) {
   charObj.setFrameNum(config.charWidth - 1);
 }
 
-export function drawFrameSync({ charPoints, charObj, state }) {
+function drawFrameSync({ charPoints, charObj, state }) {
   const {
     ctx,
-    config: { scale, charWidth },
+    config: { scale, charWidth, gridSpace },
     rowsScrolled,
   } = state;
 
   charPoints.forEach(({ row: charPointY, col: charPointX }) => {
-    const rowGap = (charObj.row - rowsScrolled()) * scale;
-    const colGap = charObj.col * scale;
+    const rowGap = (charObj.row - rowsScrolled()) * gridSpace;
+    const colGap = charObj.col * gridSpace;
     const pxX = charObj.col * scale * charWidth + charPointX * scale + colGap;
     const pxY =
       (charObj.row - rowsScrolled()) * scale * charWidth +
@@ -50,32 +50,32 @@ export function drawFrameSync({ charPoints, charObj, state }) {
     const pxSizeX = scale;
     const pxSizeY = scale;
 
-    ctx.fillStyle = "rgb(255,0,190)";
+    ctx.fillStyle = 'rgb(255,0,190)';
     ctx.fillRect(pxX, pxY, pxSizeX, pxSizeY);
   });
 }
 
-export function clearFrame({ charPoints, charObj, state }) {
+function clearFrame({ charPoints, charObj, state }) {
   const {
     ctx,
-    config: { scale, charWidth },
+    config: { scale, charWidth, gridSpace },
     rowsScrolled,
   } = state;
   charPoints.forEach(({ row: charPointY, col: charPointX }) => {
-    const rowGap = (charObj.row - rowsScrolled()) * scale;
-    const colGap = charObj.col * scale;
-    ctx.clearRect(
-      charObj.col * scale * charWidth + charPointX * scale + colGap,
+    const rowGap = (charObj.row - rowsScrolled()) * gridSpace;
+    const colGap = charObj.col * gridSpace;
+    const pxX = charObj.col * scale * charWidth + charPointX * scale + colGap;
+    const pxY =
       (charObj.row - rowsScrolled()) * scale * charWidth +
-        charPointY * scale +
-        rowGap,
-      scale,
-      scale
-    );
+      charPointY * scale +
+      rowGap;
+    const pxSizeX = scale;
+    const pxSizeY = scale;
+    ctx.clearRect(pxX, pxY, pxSizeX, pxSizeY);
   });
 }
 
-export function drawScrollWordsSync({ state }) {
+function drawScrollWordsSync({ state }) {
   const { ctx } = state;
   let scrollFrameIndex = 0;
   while (scrollFrameIndex < state.config.charWidth + 2) {
@@ -86,7 +86,7 @@ export function drawScrollWordsSync({ state }) {
   }
 }
 
-export function drawScrollFrameSync({ state, scrollFrameIndex }) {
+function drawScrollFrameSync({ state, scrollFrameIndex }) {
   const { words } = state;
   for (let word of words) {
     for (let charObj of word.chars) {
@@ -95,3 +95,11 @@ export function drawScrollFrameSync({ state, scrollFrameIndex }) {
     }
   }
 }
+
+module.exports = {
+  syncDrawWords,
+  drawFrameSync,
+  clearFrame,
+  drawScrollWordsSync,
+  drawScrollFrameSync,
+};

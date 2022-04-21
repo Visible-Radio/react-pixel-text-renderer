@@ -1,6 +1,8 @@
-export async function asyncDrawWords({ state }) {
+const { clearFrame } = require('./syncDrawingFunctions');
+
+async function asyncDrawWords({ state }) {
   const { words } = state;
-  return new Promise(async (resolve) => {
+  return new Promise(async resolve => {
     for (let word of words) {
       await drawWord({ word, state });
     }
@@ -9,7 +11,7 @@ export async function asyncDrawWords({ state }) {
 }
 
 async function drawWord({ word, state }) {
-  return new Promise(async (resolve) => {
+  return new Promise(async resolve => {
     for (let c of word.chars) {
       await drawEachCharFrame({ charObj: c, state });
     }
@@ -19,7 +21,7 @@ async function drawWord({ word, state }) {
 
 async function drawEachCharFrame({ charObj, state }) {
   const { config } = state;
-  return new Promise(async (resolve) => {
+  return new Promise(async resolve => {
     if (charObj.row === config.displayRows + state.rowsScrolled()) {
       //
       await state.scroll({ charObj });
@@ -40,16 +42,16 @@ async function drawEachCharFrame({ charObj, state }) {
   });
 }
 
-export function drawFrame({ charPoints, charObj, state }) {
+function drawFrame({ charPoints, charObj, state }) {
   const {
     ctx,
-    config: { scale, charWidth },
     rowsScrolled,
+    config: { scale, charWidth, gridSpace },
   } = state;
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     charPoints.forEach(({ row: charPointY, col: charPointX }) => {
-      const rowGap = (charObj.row - rowsScrolled()) * scale;
-      const colGap = charObj.col * scale;
+      const rowGap = (charObj.row - rowsScrolled()) * gridSpace;
+      const colGap = charObj.col * gridSpace;
       const pxX = charObj.col * scale * charWidth + charPointX * scale + colGap;
       const pxY =
         (charObj.row - rowsScrolled()) * scale * charWidth +
@@ -58,34 +60,14 @@ export function drawFrame({ charPoints, charObj, state }) {
       const pxSizeX = scale;
       const pxSizeY = scale;
 
-      ctx.fillStyle = "rgb(255,0,190)";
+      ctx.fillStyle = 'rgb(255,0,190)';
       ctx.fillRect(pxX, pxY, pxSizeX, pxSizeY);
     });
     setTimeout(() => resolve(undefined), 20);
   });
 }
 
-export function clearFrame({ charPoints, charObj, state }) {
-  const {
-    ctx,
-    config: { scale, charWidth },
-    rowsScrolled,
-  } = state;
-  charPoints.forEach(({ row: charPointY, col: charPointX }) => {
-    const rowGap = (charObj.row - rowsScrolled()) * scale;
-    const colGap = charObj.col * scale;
-    ctx.clearRect(
-      charObj.col * scale * charWidth + charPointX * scale + colGap,
-      (charObj.row - rowsScrolled()) * scale * charWidth +
-        charPointY * scale +
-        rowGap,
-      scale,
-      scale
-    );
-  });
-}
-
-export async function drawScrollWords({ state }) {
+async function drawScrollWords({ state }) {
   const { ctx } = state;
   let scrollFrameIndex = 0;
   while (scrollFrameIndex < state.config.charWidth + 2) {
@@ -95,11 +77,14 @@ export async function drawScrollWords({ state }) {
   }
 }
 
-export async function drawScrollFrame({ state, scrollFrameIndex }) {
-  return new Promise(async (resolve) => {
+async function drawScrollFrame({ state, scrollFrameIndex }) {
+  return new Promise(async resolve => {
     const { words } = state;
     for (let word of words) {
       for (let charObj of word.chars) {
+        // we should write a standalone applyScrollTransform function
+        // that is not attached to the charObj
+        // to do it's job, it needs values from state.config - namely gridSpace and scale
         const charPoints = charObj.applyScrollTransform(scrollFrameIndex);
 
         drawFrame({ charPoints, charObj, state });
@@ -108,3 +93,11 @@ export async function drawScrollFrame({ state, scrollFrameIndex }) {
     setTimeout(() => resolve(undefined), 30);
   });
 }
+
+module.exports = {
+  asyncDrawWords,
+  drawFrame,
+  clearFrame,
+  drawScrollWords,
+  drawScrollFrame,
+};

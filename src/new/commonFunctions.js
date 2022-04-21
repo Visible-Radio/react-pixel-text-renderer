@@ -1,9 +1,9 @@
-import { drawScrollWords } from "./asyncDrawingFunctions";
-import { drawScrollWordsSync } from "./syncDrawingFunctions";
+const { drawScrollWords } = require('./asyncDrawingFunctions.js');
+const { drawScrollWordsSync } = require('./syncDrawingFunctions.js');
 
-export function makeWords(text, columns, defs) {
+function makeWords(text, columns, defs) {
   // each word in the resulting array will have a row and column value
-  const words = text.split(" ");
+  const words = text.split(' ');
   return words.reduce(
     (acc, word) => {
       // need to add handling for words that are longer than the column is wide
@@ -36,12 +36,12 @@ export function makeWords(text, columns, defs) {
       remaining: columns,
       row: 0,
       col: 0,
-    }
+    },
   );
 }
 
-export function makeChars({ word, row, col, defs }) {
-  return word.split("").map((c, i) => {
+function makeChars({ word, row, col, defs }) {
+  return word.split('').map((c, i) => {
     let frameNum = 0;
     return {
       char: c,
@@ -78,8 +78,10 @@ export function makeChars({ word, row, col, defs }) {
       applyScrollTransform(scrollFrameIndex) {
         // every Y value in every char should be decremented by charWidth
         // thereby moving that point up one display grid unit (not column)
-        const newDef = this.def.map((point) => {
-          const scrolledPoint = point - this.charWidth * scrollFrameIndex;
+        /*need an additional offset: gridSpace / scale -1 */
+        const newDef = this.def.map(point => {
+          const scrolledPoint =
+            point - this.charWidth * (scrollFrameIndex + (9 / 3 - 1)); // gridspace / scale - 1
           return gridPositionFromIndex({
             index: scrolledPoint,
             columns: this.charWidth,
@@ -93,7 +95,7 @@ export function makeChars({ word, row, col, defs }) {
   });
 }
 
-export function gridPositionFromIndex({ index, columns, char }) {
+function gridPositionFromIndex({ index, columns, char }) {
   if (index >= 0) {
     const row = Math.floor(index / columns);
     const col = index % columns;
@@ -132,7 +134,7 @@ function getFrameState(frameNum, def, charWidth) {
   }, []);
 }
 
-export function makeStateAsync({ words, ctx, config }) {
+function makeStateAsync({ words, ctx, config }) {
   let rowsScrolled = 0;
   const state = {
     ctx,
@@ -144,7 +146,7 @@ export function makeStateAsync({ words, ctx, config }) {
     async scroll({ charObj }) {
       // grab all the words with rows < charObj.row
       // we'll need to re-draw these
-      const scrollTheseWords = words.filter((word) => word.row < charObj.row);
+      const scrollTheseWords = words.filter(word => word.row < charObj.row);
       await drawScrollWords({ state: { ...this, words: scrollTheseWords } });
       rowsScrolled += 1;
     },
@@ -153,7 +155,7 @@ export function makeStateAsync({ words, ctx, config }) {
   return state;
 }
 
-export function makeStateSync({ words, ctx, config }) {
+function makeStateSync({ words, ctx, config }) {
   let rowsScrolled = 0;
   const state = {
     ctx,
@@ -165,7 +167,7 @@ export function makeStateSync({ words, ctx, config }) {
     scroll({ charObj }) {
       // grab all the words with rows < charObj.row
       // we'll need to re-draw these
-      const scrollTheseWords = words.filter((word) => word.row < charObj.row);
+      const scrollTheseWords = words.filter(word => word.row < charObj.row);
       drawScrollWordsSync({ state: { ...this, words: scrollTheseWords } });
       rowsScrolled += 1;
     },
@@ -174,7 +176,7 @@ export function makeStateSync({ words, ctx, config }) {
   return state;
 }
 
-export function setupCanvas({
+function setupCanvas({
   canvas,
   totalRows,
   columns,
@@ -188,7 +190,7 @@ export function setupCanvas({
   if (canvas === null || canvas === undefined) {
     throw new Error("couldn't get canvas element");
   }
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext('2d');
   ctx.canvas.width = columns * scale * charWidth + (columns - 1) * gridSpace;
   ctx.canvas.height =
     displayRows * scale * charWidth + (displayRows - 1) * gridSpace;
@@ -206,9 +208,19 @@ export function setupCanvas({
   };
 }
 
-export function makeCanvas() {
-  const root = document.getElementById("root");
-  const canvas = document.createElement("canvas");
+function makeCanvas() {
+  const root = document.getElementById('root');
+  const canvas = document.createElement('canvas');
   root.appendChild(canvas);
   return canvas;
 }
+
+module.exports = {
+  makeCanvas,
+  setupCanvas,
+  makeStateAsync,
+  makeStateSync,
+  makeWords,
+  makeChars,
+  gridPositionFromIndex,
+};
