@@ -1,5 +1,6 @@
 import { asyncDrawWords } from './asyncDrawingFunctions.js';
 import {
+  drawBorder,
   makeCanvas,
   makeStateAsync,
   makeStateSync,
@@ -19,11 +20,13 @@ export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
     columns,
     scale,
     charWidth,
-    // need gridSpaceX and gridSpaceY
-    gridSpace: scale * 3, // gridSpace should always be a multiple of scale
+    gridSpaceX: scale,
+    gridSpaceY: scale * 3,
     displayRows,
   });
   const state = makeStateAsync({ ctx, words, config });
+
+  drawBorder({ ctx, state });
   asyncDrawWords({ state });
 }
 
@@ -39,6 +42,8 @@ export function syncTextRenderer({ columns, scale, text, defs, displayRows }) {
     scale,
     charWidth,
     gridSpace: scale,
+    gridSpaceX: 3,
+    gridSpaceY: 3,
     displayRows,
   });
   const state = makeStateSync({ ctx, words, config });
@@ -51,6 +56,8 @@ export function syncTextRenderer({ columns, scale, text, defs, displayRows }) {
       scale,
       charWidth,
       gridSpace: scale,
+      gridSpaceX: 3,
+      gridSpaceY: 3,
       displayRows,
     });
     newFrameCanvas.drawImage(ctx.canvas, 0, 0);

@@ -1,3 +1,4 @@
+// const { applyScrollTransformToDef } = require('./commonFunctions');
 const { clearFrame } = require('./syncDrawingFunctions');
 
 async function asyncDrawWords({ state }) {
@@ -46,21 +47,27 @@ function drawFrame({ charPoints, charObj, state }) {
   const {
     ctx,
     rowsScrolled,
-    config: { scale, charWidth, gridSpace },
+    color,
+    config: { scale, charWidth, gridSpaceX, gridSpaceY, borderThickness },
   } = state;
   return new Promise(resolve => {
     charPoints.forEach(({ row: charPointY, col: charPointX }) => {
-      const rowGap = (charObj.row - rowsScrolled()) * gridSpace;
-      const colGap = charObj.col * gridSpace;
-      const pxX = charObj.col * scale * charWidth + charPointX * scale + colGap;
+      const rowGap = (charObj.row - rowsScrolled()) * gridSpaceY;
+      const colGap = charObj.col * gridSpaceX;
+      const pxX =
+        charObj.col * scale * charWidth +
+        charPointX * scale +
+        colGap +
+        borderThickness;
       const pxY =
         (charObj.row - rowsScrolled()) * scale * charWidth +
         charPointY * scale +
-        rowGap;
+        rowGap +
+        borderThickness;
       const pxSizeX = scale;
       const pxSizeY = scale;
 
-      ctx.fillStyle = 'rgb(255,0,190)';
+      ctx.fillStyle = color;
       ctx.fillRect(pxX, pxY, pxSizeX, pxSizeY);
     });
     setTimeout(() => resolve(undefined), 20);
@@ -68,10 +75,18 @@ function drawFrame({ charPoints, charObj, state }) {
 }
 
 async function drawScrollWords({ state }) {
-  const { ctx } = state;
+  const {
+    ctx,
+    config: { borderStroke, borderThickness },
+  } = state;
   let scrollFrameIndex = 0;
   while (scrollFrameIndex < state.config.charWidth + 2) {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.clearRect(
+      borderStroke,
+      borderStroke,
+      ctx.canvas.width - borderThickness,
+      ctx.canvas.height - borderThickness,
+    );
     await drawScrollFrame({ state, scrollFrameIndex });
     scrollFrameIndex++;
   }
@@ -82,10 +97,11 @@ async function drawScrollFrame({ state, scrollFrameIndex }) {
     const { words } = state;
     for (let word of words) {
       for (let charObj of word.chars) {
-        // we should write a standalone applyScrollTransform function
-        // that is not attached to the charObj
         // to do it's job, it needs values from state.config - namely gridSpace and scale
-        const charPoints = charObj.applyScrollTransform(scrollFrameIndex);
+        const charPoints = charObj.applyScrollTransform(
+          scrollFrameIndex,
+          state,
+        );
 
         drawFrame({ charPoints, charObj, state });
       }

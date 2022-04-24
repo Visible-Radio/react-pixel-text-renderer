@@ -58,17 +58,22 @@ function drawFrameSync({ charPoints, charObj, state }) {
 function clearFrame({ charPoints, charObj, state }) {
   const {
     ctx,
-    config: { scale, charWidth, gridSpace },
+    config: { scale, charWidth, gridSpaceX, gridSpaceY, borderThickness },
     rowsScrolled,
   } = state;
   charPoints.forEach(({ row: charPointY, col: charPointX }) => {
-    const rowGap = (charObj.row - rowsScrolled()) * gridSpace;
-    const colGap = charObj.col * gridSpace;
-    const pxX = charObj.col * scale * charWidth + charPointX * scale + colGap;
+    const rowGap = (charObj.row - rowsScrolled()) * gridSpaceY;
+    const colGap = charObj.col * gridSpaceX;
+    const pxX =
+      charObj.col * scale * charWidth +
+      charPointX * scale +
+      colGap +
+      borderThickness;
     const pxY =
       (charObj.row - rowsScrolled()) * scale * charWidth +
       charPointY * scale +
-      rowGap;
+      rowGap +
+      borderThickness;
     const pxSizeX = scale;
     const pxSizeY = scale;
     ctx.clearRect(pxX, pxY, pxSizeX, pxSizeY);

@@ -75,24 +75,31 @@ function makeChars({ word, row, col, defs }) {
       setFrameNum(val) {
         frameNum = val;
       },
-      applyScrollTransform(scrollFrameIndex) {
+      applyScrollTransform(scrollFrameIndex, state) {
         // every Y value in every char should be decremented by charWidth
         // thereby moving that point up one display grid unit (not column)
-        /*need an additional offset: gridSpace / scale -1 */
-        const newDef = this.def.map(point => {
-          const scrolledPoint =
-            point - this.charWidth * (scrollFrameIndex + (9 / 3 - 1)); // gridspace / scale - 1
-          return gridPositionFromIndex({
-            index: scrolledPoint,
-            columns: this.charWidth,
-            char: this.char,
-          });
+        return applyScrollTransformToDef({
+          scrollFrameIndex,
+          charObj: this,
+          state,
         });
-
-        return newDef;
       },
     };
   });
+}
+
+function applyScrollTransformToDef({ scrollFrameIndex, charObj, state }) {
+  const { gridSpaceY, scale } = state.config;
+  const newDef = charObj.def.map(point => {
+    const scrolledPoint =
+      point - charObj.charWidth * (scrollFrameIndex + (gridSpaceY / scale - 1));
+    return gridPositionFromIndex({
+      index: scrolledPoint,
+      columns: charObj.charWidth,
+      char: charObj.char,
+    });
+  });
+  return newDef;
 }
 
 function gridPositionFromIndex({ index, columns, char }) {
@@ -135,11 +142,13 @@ function getFrameState(frameNum, def, charWidth) {
 }
 
 function makeStateAsync({ words, ctx, config }) {
+  let color = 'rgb(255,0,190)';
   let rowsScrolled = 0;
   const state = {
     ctx,
     words,
     config,
+    color,
     rowsScrolled() {
       return rowsScrolled;
     },
@@ -182,18 +191,28 @@ function setupCanvas({
   columns,
   scale,
   charWidth,
-  gridSpace,
+  gridSpaceX,
+  gridSpaceY,
   displayRows,
 }) {
   // set up the canvas
-  // we need to alot for space between rows and columns when sizing the canvas
   if (canvas === null || canvas === undefined) {
     throw new Error("couldn't get canvas element");
   }
   const ctx = canvas.getContext('2d');
-  ctx.canvas.width = columns * scale * charWidth + (columns - 1) * gridSpace;
+  // we need to alot for space between rows and columns when sizing the canvas
+  // we'll draw a border around the canvas elsehwere
+  // so also include space for this
+  const borderThickness = scale * 3;
+  const borderSpace = borderThickness * 2;
+  const borderStroke = scale;
+
+  ctx.canvas.width =
+    columns * scale * charWidth + (columns - 1) * gridSpaceX + borderSpace;
   ctx.canvas.height =
-    displayRows * scale * charWidth + (displayRows - 1) * gridSpace;
+    displayRows * scale * charWidth +
+    (displayRows - 1) * gridSpaceY +
+    borderSpace;
 
   return {
     ctx,
@@ -203,7 +222,11 @@ function setupCanvas({
       displayRows,
       scale,
       charWidth,
-      gridSpace,
+      gridSpaceX,
+      gridSpaceY,
+      borderThickness,
+      borderSpace,
+      borderStroke,
     },
   };
 }
@@ -211,8 +234,25 @@ function setupCanvas({
 function makeCanvas() {
   const root = document.getElementById('root');
   const canvas = document.createElement('canvas');
+  canvas.style.margin = '3px';
   root.appendChild(canvas);
   return canvas;
+}
+
+function drawBorder({ ctx, state }) {
+  const borderStroke = state.config.borderStroke;
+  ctx.strokeStyle = state.color;
+
+  ctx.moveTo(borderStroke / 2, borderStroke / 2);
+  ctx.lineTo(ctx.canvas.width - borderStroke / 2, borderStroke / 2);
+  ctx.lineTo(
+    ctx.canvas.width - borderStroke / 2,
+    ctx.canvas.height - borderStroke / 2,
+  );
+  ctx.lineTo(borderStroke / 2, ctx.canvas.height - borderStroke / 2);
+  ctx.lineTo(borderStroke / 2, 0);
+  ctx.lineWidth = borderStroke;
+  ctx.stroke();
 }
 
 module.exports = {
@@ -223,4 +263,6 @@ module.exports = {
   makeWords,
   makeChars,
   gridPositionFromIndex,
+  applyScrollTransformToDef,
+  drawBorder,
 };

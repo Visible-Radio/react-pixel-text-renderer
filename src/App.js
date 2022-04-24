@@ -11,7 +11,7 @@ function App() {
     asyncTextRenderer({
       columns: 15,
       displayRows: 5,
-      scale: 3,
+      scale: 5,
       text: (joke + Object.keys(defs).join(' ') + end).toUpperCase(),
       defs,
     });
