@@ -1,12 +1,32 @@
 const { drawScrollWords } = require('./asyncDrawingFunctions.js');
 const { drawScrollWordsSync } = require('./syncDrawingFunctions.js');
 
+function breakWord(word, columns, broken = []) {
+  if (word.length <= columns) {
+    return [...broken, word];
+  } else {
+    return [
+      ...broken,
+      word.slice(0, columns),
+      ...breakWord(word.slice(columns, word.length), columns, broken),
+    ];
+  }
+}
+
 function makeWords(text, columns, defs) {
+  // break the string into words, none of which are longer than the number of columns
+  const words = text.split(' ').reduce((acc, word) => {
+    if (word.length <= columns) {
+      return [...acc, word];
+    } else {
+      return [...acc, ...breakWord(word, columns)];
+    }
+  }, []);
+  console.log(words, columns);
+
   // each word in the resulting array will have a row and column value
-  const words = text.split(' ');
   return words.reduce(
     (acc, word) => {
-      // need to add handling for words that are longer than the column is wide
       if (acc.remaining >= word.length) {
         acc.words.push({
           word,
