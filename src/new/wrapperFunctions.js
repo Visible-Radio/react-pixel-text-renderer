@@ -20,7 +20,7 @@ export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
     columns,
     scale,
     charWidth,
-    gridSpaceX: scale,
+    gridSpaceX: 0,
     gridSpaceY: scale * 3,
     displayRows,
   });
@@ -28,6 +28,8 @@ export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
 
   drawBorder({ ctx, state });
   asyncDrawWords({ state });
+
+  console.log(words);
 }
 
 // For Debugging in the browser - Creates a canvas for each frame and appends it to the DOM

@@ -2,6 +2,7 @@ const { drawScrollWords } = require('./asyncDrawingFunctions.js');
 const { drawScrollWordsSync } = require('./syncDrawingFunctions.js');
 
 function breakWord(word, columns, broken = []) {
+  // recursively break down a word that is too long
   if (word.length <= columns) {
     return [...broken, word];
   } else {
@@ -13,42 +14,63 @@ function breakWord(word, columns, broken = []) {
   }
 }
 
+function parseWords(text, columns) {
+  return text.split(' ').map(w => {
+    const totalSegments = Math.ceil(w.length / columns);
+    const segments = totalSegments > 1 ? breakWord(w, columns) : [w];
+    return { fullWordText: w, totalSegments, segments, flags: {} };
+  });
+}
+
 function makeWords(text, columns, defs) {
   // break the string into words, none of which are longer than the number of columns
-  const words = text.split(' ').reduce((acc, word) => {
-    if (word.length <= columns) {
-      return [...acc, word];
-    } else {
-      return [...acc, ...breakWord(word, columns)];
-    }
-  }, []);
-  console.log(words, columns);
+  const parsedWords = parseWords(text, columns);
 
-  // each word in the resulting array will have a row and column value
-  return words.reduce(
+  // assign each word a row and column value
+  return parsedWords.reduce(
     (acc, word) => {
-      if (acc.remaining >= word.length) {
-        acc.words.push({
-          word,
-          row: acc.row,
-          col: acc.col,
-          chars: makeChars({ word, row: acc.row, col: acc.col, defs }),
-        });
-        acc.remaining -= word.length + 1;
-        acc.col += word.length + 1;
-      } else {
-        // start a new line
-        acc.row += 1;
-        acc.col = 0;
-        acc.words.push({
-          word,
-          row: acc.row,
-          col: acc.col,
-          chars: makeChars({ word, row: acc.row, col: acc.col, defs }),
-        });
-        acc.remaining = columns - (word.length + 1);
-        acc.col += word.length + 1;
-      }
+      word.segments.forEach((segment, segmentIndex) => {
+        if (acc.remaining >= segment.length) {
+          acc.words.push({
+            word,
+            segment,
+            segmentIndex,
+            row: acc.row,
+            col: acc.col,
+            chars: makeChars({
+              segment,
+              segmentIndex,
+              word,
+              row: acc.row,
+              col: acc.col,
+              defs,
+            }),
+          });
+          acc.remaining -= segment.length + 1;
+          acc.col += segment.length + 1;
+        } else {
+          acc.row += 1;
+          acc.col = 0;
+          acc.words.push({
+            word,
+            segment,
+            segmentIndex,
+            row: acc.row,
+            col: acc.col,
+            chars: makeChars({
+              segment,
+              segmentIndex,
+              word,
+              row: acc.row,
+              col: acc.col,
+              defs,
+            }),
+          });
+          acc.remaining = columns - (segment.length + 1);
+          acc.col += segment.length + 1;
+        }
+      });
+
       return acc;
     },
     {
@@ -60,8 +82,8 @@ function makeWords(text, columns, defs) {
   );
 }
 
-function makeChars({ word, row, col, defs }) {
-  return word.split('').map((c, i) => {
+function makeChars({ segment, segmentIndex, word, row, col, defs }) {
+  return segment.split('').map((c, i) => {
     let frameNum = 0;
     return {
       char: c,
@@ -69,6 +91,11 @@ function makeChars({ word, row, col, defs }) {
       col: col + i,
       def: defs[c],
       charWidth: defs.charWidth,
+      segmentIndex,
+      index() {
+        // provide a the index to the segment on the associated word
+        return segmentIndex();
+      },
       word() {
         // provide a reference to the associated word
         return word;
