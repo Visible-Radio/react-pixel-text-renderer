@@ -10,10 +10,10 @@ const text = (joke + Object.keys(defs).join(' ') + end).toUpperCase();
 function App() {
   useEffect(() => {
     asyncTextRenderer({
-      columns: 15,
+      columns: 12,
       displayRows: 5,
       scale: 3,
-      text: text,
+      text: `why hello_hello_hello_hello there world`.toUpperCase(),
       defs,
     });
     // syncTextRenderer({
@@ -29,3 +29,36 @@ function App() {
 }
 
 export default App;
+
+/* 
+
+<Blink times="5"></Blink>
+<Pause duration="20"/>
+<Highlight></Highlight>
+
+need an escape sequence to actually write these things
+^^<Highlight></Highlight>
+should literally write "<Highlight></Highlight>" to the display
+
+What about
+
+<Highlight>
+  <Blink times="5">
+    text 
+  </Blink>
+</Highlight>
+
+Or: 
+
+<Blink times="5">
+  <Highlight>
+    text 
+  </Highlight>
+</Blink>
+*/
+
+/* 
+may need to digest the input text in some other fashion
+- rather than splitting on certain characters
+we may need to ingest a little bit at a time if we want to handle nesting?
+ */

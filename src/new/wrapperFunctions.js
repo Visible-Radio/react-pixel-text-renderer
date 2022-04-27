@@ -13,6 +13,7 @@ import { syncDrawWords } from './syncDrawingFunctions.js';
 export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
   const { charWidth } = defs;
   const { words } = makeWords(text, columns, defs);
+
   const totalRows = words.slice(-1)[0].row + 1;
   const { ctx, config } = setupCanvas({
     canvas: makeCanvas(),
@@ -28,8 +29,6 @@ export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
 
   drawBorder({ ctx, state });
   asyncDrawWords({ state });
-
-  console.log(words);
 }
 
 // For Debugging in the browser - Creates a canvas for each frame and appends it to the DOM

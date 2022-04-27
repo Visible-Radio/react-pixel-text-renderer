@@ -1,4 +1,3 @@
-// const { applyScrollTransformToDef } = require('./commonFunctions');
 const { clearFrame } = require('./syncDrawingFunctions');
 
 async function asyncDrawWords({ state }) {

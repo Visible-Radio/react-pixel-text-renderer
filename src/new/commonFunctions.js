@@ -15,22 +15,33 @@ function breakWord(word, columns, broken = []) {
 }
 
 function parseWords(text, columns) {
-  return text.split(' ').map(w => {
+  return text.split(/(\s|\n)/).reduce((acc, w) => {
+    if (!w.length) return acc;
+
     const totalSegments = Math.ceil(w.length / columns);
     const segments = totalSegments > 1 ? breakWord(w, columns) : [w];
-    return { fullWordText: w, totalSegments, segments, flags: {} };
-  });
+    return [...acc, { fullWordText: w, totalSegments, segments }];
+  }, []);
 }
 
 function makeWords(text, columns, defs) {
   // break the string into words, none of which are longer than the number of columns
   const parsedWords = parseWords(text, columns);
+  // console.log(parsedWords);
 
   // assign each word a row and column value
   return parsedWords.reduce(
     (acc, word) => {
       word.segments.forEach((segment, segmentIndex) => {
-        if (acc.remaining >= segment.length) {
+        if (/[\n\s]/.test(segment)) {
+          if (segment === '\n') {
+            acc.row += 1;
+            acc.col = 0;
+          }
+          return acc;
+        }
+
+        if (acc.getRemaining() >= segment.length) {
           acc.words.push({
             word,
             segment,
@@ -46,8 +57,8 @@ function makeWords(text, columns, defs) {
               defs,
             }),
           });
-          acc.remaining -= segment.length + 1;
           acc.col += segment.length + 1;
+          // +1 is to add a space
         } else {
           acc.row += 1;
           acc.col = 0;
@@ -66,16 +77,16 @@ function makeWords(text, columns, defs) {
               defs,
             }),
           });
-          acc.remaining = columns - (segment.length + 1);
           acc.col += segment.length + 1;
         }
       });
-
       return acc;
     },
     {
       words: [],
-      remaining: columns,
+      getRemaining() {
+        return columns - this.col;
+      },
       row: 0,
       col: 0,
     },
@@ -89,7 +100,7 @@ function makeChars({ segment, segmentIndex, word, row, col, defs }) {
       char: c,
       row,
       col: col + i,
-      def: defs[c],
+      def: defs[c] ?? defs[' '],
       charWidth: defs.charWidth,
       segmentIndex,
       index() {
