@@ -16,18 +16,25 @@ function breakWord(word, columns, broken = []) {
 
 function parseWords(text, columns) {
   return text.split(/(\s|\n)/).reduce((acc, w) => {
-    if (!w.length) return acc;
-
-    const totalSegments = Math.ceil(w.length / columns);
-    const segments = totalSegments > 1 ? breakWord(w, columns) : [w];
-    return [...acc, { fullWordText: w, totalSegments, segments }];
+    const { flags, trimmed } = getFlags(w);
+    if (!trimmed.length) return acc;
+    const totalSegments = Math.ceil(trimmed.length / columns);
+    const segments =
+      totalSegments > 1 ? breakWord(trimmed, columns) : [trimmed];
+    return [...acc, { fullWordText: trimmed, totalSegments, segments, flags }];
   }, []);
+}
+
+function getFlags(fullWordText) {
+  // just detect flags at the beginning of each word
+  const highlightFlag = /^<HL>/.test(fullWordText);
+  const trimmed = highlightFlag ? fullWordText.slice(4) : fullWordText;
+  return { flags: { highlightFlag }, trimmed };
 }
 
 function makeWords(text, columns, defs) {
   // break the string into words, none of which are longer than the number of columns
   const parsedWords = parseWords(text, columns);
-  // console.log(parsedWords);
 
   // assign each word a row and column value
   return parsedWords.reduce(
@@ -102,6 +109,7 @@ function makeChars({ segment, segmentIndex, word, row, col, defs }) {
       col: col + i,
       def: defs[c] ?? defs[' '],
       charWidth: defs.charWidth,
+      flags: word.flags,
       segmentIndex,
       index() {
         // provide a the index to the segment on the associated word
@@ -115,20 +123,17 @@ function makeChars({ segment, segmentIndex, word, row, col, defs }) {
         return frameNum;
       },
       frameState() {
-        return getFrameState(frameNum, this.def, this.charWidth);
+        return getFrameState(frameNum, this);
       },
       nextFrame() {
         if (frameNum < defs.charWidth) {
-          const frame = getFrameState(frameNum, this.def, this.charWidth);
+          const frame = getFrameState(frameNum, this);
           frameNum += 1;
           return frame;
         } else if (frameNum === defs.charWidth) {
           frameNum = 0;
-          return getFrameState(frameNum, this.def, this.charWidth);
+          return getFrameState(frameNum, this);
         }
-      },
-      lastFrame() {
-        getFrameState(this.charWidth - 1, this.def, this.charWidth);
       },
       setFrameNum(val) {
         frameNum = val;
@@ -146,9 +151,26 @@ function makeChars({ segment, segmentIndex, word, row, col, defs }) {
   });
 }
 
+// this works on the def array - what if we wrote a function that works on x,y points
+function applyHighlightTransform(def, charObj) {
+  if (!charObj.flags.highlightFlag) return def;
+  const { charWidth } = charObj;
+  let full = [];
+  for (let i = -charWidth; i < (charWidth + 1) * charWidth; i++) {
+    if (!def.includes(i)) full.push(i);
+  }
+
+  // we should see col values of -1 and 7
+  full.forEach(index =>
+    console.log(gridPositionFromIndex({ index, columns: charWidth + 1 })),
+  );
+
+  return full;
+}
+
 function applyScrollTransformToDef({ scrollFrameIndex, charObj, state }) {
   const { gridSpaceY, scale } = state.config;
-  const newDef = charObj.def.map(point => {
+  const newDef = applyHighlightTransform(charObj.def, charObj).map(point => {
     const scrolledPoint =
       point - charObj.charWidth * (scrollFrameIndex + (gridSpaceY / scale - 1));
     return gridPositionFromIndex({
@@ -174,6 +196,7 @@ function gridPositionFromIndex({ index, columns, char }) {
     const row = Math.floor(index / columns);
     const col =
       index % columns === 0 ? index % columns : (index % columns) + columns;
+
     return {
       col,
       row,
@@ -181,26 +204,39 @@ function gridPositionFromIndex({ index, columns, char }) {
   }
 }
 
-function getFrameState(frameNum, def, charWidth) {
+function getFrameState(frameNum, charObj) {
   // based one the frame num, apply a transformation to the def
   // and return it as a new array
   // this will be what gets drawn to the canvas for that character frame
+  const { charWidth, def } = charObj;
+  const lastFrame = charWidth === frameNum + 1;
+
   const totalPoints = charWidth * (frameNum + 1);
 
-  return def.slice(0, totalPoints).reduce((acc, point) => {
-    const newPoint = gridPositionFromIndex({
-      index: point,
-      columns: frameNum + 1,
-    });
-    if (newPoint.row < charWidth) {
-      acc.push(newPoint);
-    }
-    return acc;
-  }, []);
+  return applyHighlightTransform(def.slice(0, totalPoints), charObj).reduce(
+    (acc, point) => {
+      const newPoint = gridPositionFromIndex({
+        index: point,
+        columns: frameNum + 1,
+      });
+
+      if (lastFrame) {
+        if (newPoint.row < charWidth + 1 && newPoint.row > -2) {
+          acc.push(newPoint);
+        }
+      }
+      if (newPoint.row < charWidth && newPoint.row > -2) {
+        acc.push(newPoint);
+      }
+
+      return acc;
+    },
+    [],
+  );
 }
 
 function makeStateAsync({ words, ctx, config }) {
-  let color = 'rgb(255,0,190)';
+  let color = 'rgb(0,0,0)';
   let rowsScrolled = 0;
   const state = {
     ctx,

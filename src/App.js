@@ -4,16 +4,16 @@ import defs from './new/customDefs_charWidth_7.json';
 import { asyncTextRenderer, syncTextRenderer } from './new/wrapperFunctions';
 
 const joke = 'Welcome to Node pixel text renderer v0.0.1. init charset. ...';
-const end = ' Charset initialized. ... Hello world';
+const end = ' Charset initialized. ... Hello world\nHello\n<HL>Hello world';
 const text = (joke + Object.keys(defs).join(' ') + end).toUpperCase();
 
 function App() {
   useEffect(() => {
     asyncTextRenderer({
-      columns: 12,
+      columns: 15,
       displayRows: 5,
-      scale: 3,
-      text: `why hello_hello_hello_hello there world`.toUpperCase(),
+      scale: 5,
+      text: "<HL>Welcome to <HL>Node <HL>pixel <HL>text <HL>renderer v0.0.1. hello <HL>there y'all".toUpperCase(),
       defs,
     });
     // syncTextRenderer({
@@ -58,7 +58,9 @@ Or:
 */
 
 /* 
-may need to digest the input text in some other fashion
+will need to digest the input text in some other fashion
 - rather than splitting on certain characters
 we may need to ingest a little bit at a time if we want to handle nesting?
+
+we could use a simpler solution that just looks for a flag at the begining of each word
  */

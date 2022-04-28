@@ -21,8 +21,8 @@ export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
     columns,
     scale,
     charWidth,
-    gridSpaceX: 0,
-    gridSpaceY: scale * 3,
+    gridSpaceX: scale,
+    gridSpaceY: scale * 4,
     displayRows,
   });
   const state = makeStateAsync({ ctx, words, config });
