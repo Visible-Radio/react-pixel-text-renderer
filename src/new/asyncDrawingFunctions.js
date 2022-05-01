@@ -11,8 +11,8 @@ async function asyncDrawWords({ state }) {
 }
 
 async function drawWord({ word, state }) {
-  state.newColor();
   return new Promise(async resolve => {
+    state.newColor();
     for (let c of word.chars) {
       await drawEachCharFrame({ charObj: c, state });
     }
@@ -54,15 +54,16 @@ function drawFrame({ charPoints, charObj, state }) {
     charPoints.forEach(({ row: charPointY, col: charPointX }) => {
       const rowGap = (charObj.row - rowsScrolled()) * gridSpaceY;
       const colGap = charObj.col * gridSpaceX;
-      const pxX =
-        charObj.col * scale * charWidth +
-        charPointX * scale +
-        colGap +
-        borderThickness;
       const pxY =
         (charObj.row - rowsScrolled()) * scale * charWidth +
         charPointY * scale +
         rowGap +
+        borderThickness;
+      if (pxY === 0) return;
+      const pxX =
+        charObj.col * scale * charWidth +
+        charPointX * scale +
+        colGap +
         borderThickness;
       const pxSizeX = scale;
       const pxSizeY = scale;

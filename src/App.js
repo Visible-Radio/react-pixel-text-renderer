@@ -7,15 +7,19 @@ const joke =
   'Welcome to <HL>Node <HL>pixel <HL>text <HL>renderer v0.0.1. init charset. ...';
 const end = ' Charset initialized. ... Hello world\nHello\n<HL>Hello <HL>world';
 const text = (joke + Object.keys(defs).join(' ') + end).toUpperCase();
-const threeCoopers = '<HL>/Cooper/ cooper/cooper/'.toUpperCase();
+const threeCoopers = ' /Cooper/cooper/cooper'.toUpperCase();
 
 function App() {
   useEffect(() => {
     asyncTextRenderer({
-      columns: 12,
-      displayRows: 4,
-      scale: 5,
-      text: threeCoopers,
+      columns: 11,
+      displayRows: 5,
+      scale: 10,
+      text:
+        seriesOfEvilNumbers(4).toUpperCase() +
+        threeCoopers +
+        seriesOfEvilNumbers(4) +
+        ' the owls are <HL>not what they seem'.toUpperCase(),
       defs,
     });
     // syncTextRenderer({
@@ -32,37 +36,18 @@ function App() {
 
 export default App;
 
-/* 
+function randomEvilNumbers() {
+  const num = Math.trunc(Math.random() * 1000);
+  const letter = 'abcdefghijklmnopqrstuvwxyz'
+    .split('')
+    [Math.floor(Math.random() * 26)].toUpperCase();
+  return ` <HL>/${letter}${num}`;
+}
 
-<Blink times="5"></Blink>
-<Pause duration="20"/>
-<Highlight></Highlight>
-
-need an escape sequence to actually write these things
-^^<Highlight></Highlight>
-should literally write "<Highlight></Highlight>" to the display
-
-What about
-
-<Highlight>
-  <Blink times="5">
-    text 
-  </Blink>
-</Highlight>
-
-Or: 
-
-<Blink times="5">
-  <Highlight>
-    text 
-  </Highlight>
-</Blink>
-*/
-
-/* 
-will need to digest the input text in some other fashion
-- rather than splitting on certain characters
-we may need to ingest a little bit at a time if we want to handle nesting?
-
-we could use a simpler solution that just looks for a flag at the begining of each word
- */
+function seriesOfEvilNumbers(count) {
+  let string = '';
+  for (let i = 0; i < count; i++) {
+    string += randomEvilNumbers();
+  }
+  return string;
+}

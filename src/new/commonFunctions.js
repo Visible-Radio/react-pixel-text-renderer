@@ -345,7 +345,8 @@ function makeCanvas() {
   return canvas;
 }
 
-function drawBorder({ ctx, state }) {
+function drawBorder(state) {
+  const { ctx } = state;
   const borderStroke = state.config.borderStroke;
   ctx.strokeStyle = state.color;
 
@@ -387,6 +388,7 @@ function modifyDefs(defs) {
 }
 
 module.exports = {
+  drawBorder,
   modifyDefs,
   makeCanvas,
   setupCanvas,
@@ -396,5 +398,4 @@ module.exports = {
   makeChars,
   gridPositionFromIndex,
   applyScrollTransformToDef,
-  drawBorder,
 };

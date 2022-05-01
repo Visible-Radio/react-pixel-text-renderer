@@ -29,7 +29,7 @@ export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
   });
   const state = makeStateAsync({ ctx, words, config });
 
-  drawBorder({ ctx, state });
+  drawBorder(state);
   asyncDrawWords({ state });
 }
 
