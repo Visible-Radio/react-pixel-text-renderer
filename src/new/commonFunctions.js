@@ -126,11 +126,11 @@ function makeChars({ segment, segmentIndex, word, row, col, defs }) {
         return getFrameState(frameNum, this);
       },
       nextFrame() {
-        if (frameNum < defs.charWidth) {
+        if (frameNum < this.charWidth) {
           const frame = getFrameState(frameNum, this);
           frameNum += 1;
           return frame;
-        } else if (frameNum === defs.charWidth) {
+        } else if (frameNum === this.charWidth) {
           frameNum = 0;
           return getFrameState(frameNum, this);
         }
@@ -156,15 +156,9 @@ function applyHighlightTransform(def, charObj) {
   if (!charObj.flags.highlightFlag) return def;
   const { charWidth } = charObj;
   let full = [];
-  for (let i = -charWidth; i < (charWidth + 1) * charWidth; i++) {
+  for (let i = 0; i < charWidth * charWidth; i++) {
     if (!def.includes(i)) full.push(i);
   }
-
-  // we should see col values of -1 and 7
-  full.forEach(index =>
-    console.log(gridPositionFromIndex({ index, columns: charWidth + 1 })),
-  );
-
   return full;
 }
 
@@ -191,7 +185,6 @@ function gridPositionFromIndex({ index, columns, char }) {
       row,
     };
   }
-
   if (index < 0) {
     const row = Math.floor(index / columns);
     const col =
@@ -213,36 +206,44 @@ function getFrameState(frameNum, charObj) {
 
   const totalPoints = charWidth * (frameNum + 1);
 
-  return applyHighlightTransform(def.slice(0, totalPoints), charObj).reduce(
-    (acc, point) => {
-      const newPoint = gridPositionFromIndex({
-        index: point,
-        columns: frameNum + 1,
-      });
+  const points = applyHighlightTransform(
+    def.slice(0, totalPoints),
+    charObj,
+  ).reduce((acc, point) => {
+    const newPoint = gridPositionFromIndex({
+      index: point,
+      columns: frameNum + 1,
+    });
 
-      if (lastFrame) {
-        if (newPoint.row < charWidth + 1 && newPoint.row > -2) {
-          acc.push(newPoint);
-        }
-      }
-      if (newPoint.row < charWidth && newPoint.row > -2) {
+    if (lastFrame) {
+      if (newPoint.row < charWidth + 1 && newPoint.row > -2) {
         acc.push(newPoint);
       }
+    }
+    if (newPoint.row < charWidth && newPoint.row > -2) {
+      acc.push(newPoint);
+    }
 
-      return acc;
-    },
-    [],
-  );
+    return acc;
+  }, []);
+  return points;
 }
 
 function makeStateAsync({ words, ctx, config }) {
-  let color = 'rgb(0,0,0)';
+  let color = 'rgb(200,0,120)';
   let rowsScrolled = 0;
   const state = {
     ctx,
     words,
     config,
     color,
+    getColor() {
+      return color;
+    },
+    newColor() {
+      color = generateRandomColors();
+      return color;
+    },
     rowsScrolled() {
       return rowsScrolled;
     },
@@ -254,8 +255,19 @@ function makeStateAsync({ words, ctx, config }) {
       rowsScrolled += 1;
     },
   };
-
   return state;
+}
+
+function generateRandomColors() {
+  const random = () => {
+    const num = Math.floor(Math.random() * (350 - 50) + 50);
+    return num > 255 ? 255 : num;
+  };
+  const R = random();
+  const G = random();
+  const B = random();
+  const color = `rgb(${R}, ${G}, ${B})`;
+  return color;
 }
 
 function makeStateSync({ words, ctx, config }) {
@@ -349,7 +361,33 @@ function drawBorder({ ctx, state }) {
   ctx.stroke();
 }
 
+function modifyDefs(defs) {
+  return Object.fromEntries(
+    Object.entries(defs).map(([key, value]) => {
+      if (key === 'charWidth') {
+        return [key, value + 2];
+      } else {
+        // remap the points as though they belong in a grid 2 columns wider
+        // this guarantees that in order to 'highlight' any char, we can simply invert that cell
+        // since we have a border in which no square contains part of the character
+        return [
+          key,
+          value.map((pointIndex, i) => {
+            // for each row in the new grid, add 1 to the point Indexes in that row
+            return (pointIndex +=
+              2 * Math.floor(pointIndex / defs.charWidth) +
+              1 +
+              defs.charWidth +
+              2);
+          }),
+        ];
+      }
+    }),
+  );
+}
+
 module.exports = {
+  modifyDefs,
   makeCanvas,
   setupCanvas,
   makeStateAsync,

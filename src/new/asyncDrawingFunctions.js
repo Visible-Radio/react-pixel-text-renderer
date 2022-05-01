@@ -11,6 +11,7 @@ async function asyncDrawWords({ state }) {
 }
 
 async function drawWord({ word, state }) {
+  state.newColor();
   return new Promise(async resolve => {
     for (let c of word.chars) {
       await drawEachCharFrame({ charObj: c, state });
@@ -27,7 +28,7 @@ async function drawEachCharFrame({ charObj, state }) {
       await state.scroll({ charObj });
     }
     let last;
-    while (charObj.frameNum() < config.charWidth) {
+    while (charObj.frameNum() < charObj.charWidth) {
       const charPoints = charObj.nextFrame();
 
       if (last) {
@@ -46,7 +47,7 @@ function drawFrame({ charPoints, charObj, state }) {
   const {
     ctx,
     rowsScrolled,
-    color,
+    getColor,
     config: { scale, charWidth, gridSpaceX, gridSpaceY, borderThickness },
   } = state;
   return new Promise(resolve => {
@@ -66,7 +67,7 @@ function drawFrame({ charPoints, charObj, state }) {
       const pxSizeX = scale;
       const pxSizeY = scale;
 
-      ctx.fillStyle = color;
+      ctx.fillStyle = getColor();
       ctx.fillRect(pxX, pxY, pxSizeX, pxSizeY);
     });
     setTimeout(() => resolve(undefined), 20);

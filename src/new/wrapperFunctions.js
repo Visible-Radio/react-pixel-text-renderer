@@ -5,14 +5,16 @@ import {
   makeStateAsync,
   makeStateSync,
   makeWords,
+  modifyDefs,
   setupCanvas,
 } from './commonFunctions.js';
 import { syncDrawWords } from './syncDrawingFunctions.js';
 
 // For use in the browser
 export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
-  const { charWidth } = defs;
-  const { words } = makeWords(text, columns, defs);
+  const modifiedDefs = modifyDefs(defs);
+  const { charWidth } = modifiedDefs;
+  const { words } = makeWords(text, columns, modifiedDefs);
 
   const totalRows = words.slice(-1)[0].row + 1;
   const { ctx, config } = setupCanvas({
@@ -21,8 +23,8 @@ export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
     columns,
     scale,
     charWidth,
-    gridSpaceX: scale,
-    gridSpaceY: scale * 4,
+    gridSpaceX: 0,
+    gridSpaceY: scale,
     displayRows,
   });
   const state = makeStateAsync({ ctx, words, config });

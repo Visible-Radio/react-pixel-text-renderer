@@ -3,17 +3,19 @@ import { useEffect } from 'react';
 import defs from './new/customDefs_charWidth_7.json';
 import { asyncTextRenderer, syncTextRenderer } from './new/wrapperFunctions';
 
-const joke = 'Welcome to Node pixel text renderer v0.0.1. init charset. ...';
-const end = ' Charset initialized. ... Hello world\nHello\n<HL>Hello world';
+const joke =
+  'Welcome to <HL>Node <HL>pixel <HL>text <HL>renderer v0.0.1. init charset. ...';
+const end = ' Charset initialized. ... Hello world\nHello\n<HL>Hello <HL>world';
 const text = (joke + Object.keys(defs).join(' ') + end).toUpperCase();
+const threeCoopers = '<HL>/Cooper/ cooper/cooper/'.toUpperCase();
 
 function App() {
   useEffect(() => {
     asyncTextRenderer({
-      columns: 15,
-      displayRows: 5,
+      columns: 12,
+      displayRows: 4,
       scale: 5,
-      text: "<HL>Welcome to <HL>Node <HL>pixel <HL>text <HL>renderer v0.0.1. hello <HL>there y'all".toUpperCase(),
+      text: threeCoopers,
       defs,
     });
     // syncTextRenderer({
