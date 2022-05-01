@@ -8,18 +8,19 @@ const joke =
 const end = ' Charset initialized. ... Hello world\nHello\n<HL>Hello <HL>world';
 const text = (joke + Object.keys(defs).join(' ') + end).toUpperCase();
 const threeCoopers = ' /Cooper/cooper/cooper'.toUpperCase();
+const ominousMessage =
+  seriesOfEvilNumbers(20).toUpperCase() +
+  threeCoopers +
+  seriesOfEvilNumbers(20) +
+  ' the owls are <HL>not what they seem...'.toUpperCase();
 
 function App() {
   useEffect(() => {
     asyncTextRenderer({
-      columns: 11,
-      displayRows: 5,
-      scale: 10,
-      text:
-        seriesOfEvilNumbers(4).toUpperCase() +
-        threeCoopers +
-        seriesOfEvilNumbers(4) +
-        ' the owls are <HL>not what they seem'.toUpperCase(),
+      columns: 9,
+      displayRows: 1,
+      scale: 5,
+      text: 'fuck <HL>yeah'.toUpperCase(),
       defs,
     });
     // syncTextRenderer({

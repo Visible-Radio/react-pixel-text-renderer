@@ -47,7 +47,6 @@ function drawFrame({ charPoints, charObj, state }) {
   const {
     ctx,
     rowsScrolled,
-    getColor,
     config: { scale, charWidth, gridSpaceX, gridSpaceY, borderThickness },
   } = state;
   return new Promise(resolve => {
@@ -68,7 +67,7 @@ function drawFrame({ charPoints, charObj, state }) {
       const pxSizeX = scale;
       const pxSizeY = scale;
 
-      ctx.fillStyle = getColor();
+      ctx.fillStyle = charObj.color;
       ctx.fillRect(pxX, pxY, pxSizeX, pxSizeY);
     });
     setTimeout(() => resolve(undefined), 20);

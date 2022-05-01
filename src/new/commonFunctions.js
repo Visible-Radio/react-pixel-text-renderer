@@ -48,6 +48,7 @@ function makeWords(text, columns, defs) {
           return acc;
         }
 
+        let color = generateRandomColors();
         if (acc.getRemaining() >= segment.length) {
           acc.words.push({
             word,
@@ -56,6 +57,7 @@ function makeWords(text, columns, defs) {
             row: acc.row,
             col: acc.col,
             chars: makeChars({
+              color,
               segment,
               segmentIndex,
               word,
@@ -75,6 +77,7 @@ function makeWords(text, columns, defs) {
             segmentIndex,
             row: acc.row,
             col: acc.col,
+            color,
             chars: makeChars({
               segment,
               segmentIndex,
@@ -100,7 +103,7 @@ function makeWords(text, columns, defs) {
   );
 }
 
-function makeChars({ segment, segmentIndex, word, row, col, defs }) {
+function makeChars({ segment, segmentIndex, word, row, col, defs, color }) {
   return segment.split('').map((c, i) => {
     let frameNum = 0;
     return {
@@ -111,6 +114,7 @@ function makeChars({ segment, segmentIndex, word, row, col, defs }) {
       charWidth: defs.charWidth,
       flags: word.flags,
       segmentIndex,
+      color,
       index() {
         // provide a the index to the segment on the associated word
         return segmentIndex();
