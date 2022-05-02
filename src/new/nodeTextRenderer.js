@@ -49,12 +49,11 @@ function nodePixelTextRenderer({ columns, scale, text, defs, displayRows }) {
   encoder.finish();
 }
 
-const joke = 'Welcome to Node pixel text renderer v0.0.1. init charset. ...';
-const end =
-  'Charset initialized. ... Hello world ... Hello world ... hello world ...';
+const borgQueenAteABattery =
+  "My <HL>Borg <HL>Queen ate a <HL>Battery, like a <HL>Big square battery, like a <HL>car <HL>battery. She just keeps eating them. \nthen we go to the doctor and he says, 'yeah, <HL>we <HL>found <HL>a <HL>Battery <HL>in <HL>there' ...";
 
 nodePixelTextRenderer({
-  columns: 9,
+  columns: 4,
   displayRows: 1,
   scale: 3,
   text: 'fuck <HL>yeah'.toUpperCase(),

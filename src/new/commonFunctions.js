@@ -283,7 +283,7 @@ function makeStateSync({ words, ctx, config }) {
       // grab all the words with rows < charObj.row
       // we'll need to re-draw these
       const scrollTheseWords = words.filter(word => word.row < charObj.row);
-      drawScrollWords({ state: { ...this, words: scrollTheseWords } });
+      drawScrollWordsSync({ state: { ...this, words: scrollTheseWords } });
       rowsScrolled += 1;
     },
   };
