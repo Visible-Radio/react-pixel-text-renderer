@@ -13,14 +13,16 @@ const ominousMessage =
   threeCoopers +
   seriesOfEvilNumbers(20) +
   ' the owls are <HL>not what they seem...'.toUpperCase();
+const borgQueenAteABattery =
+  "My <HL>Borg <HL>Queen ate a <HL>Battery, like a <HL>Big square battery, like a <HL>car <HL>battery. She just keeps eating them. \nthen we go to the doctor and he says, 'yeah, <HL>we <HL>found <HL>a <HL>Battery <HL>in <HL>there' ...";
 
 function App() {
   useEffect(() => {
     asyncTextRenderer({
-      columns: 9,
-      displayRows: 1,
+      columns: 10,
+      displayRows: 2,
       scale: 5,
-      text: 'fuck <HL>yeah'.toUpperCase(),
+      text: borgQueenAteABattery.toUpperCase(),
       defs,
     });
     // syncTextRenderer({
