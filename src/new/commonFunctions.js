@@ -261,6 +261,34 @@ function makeStateAsync({ words, ctx, config }) {
   };
   return state;
 }
+function makeStateSync({ words, ctx, config }) {
+  let color = 'rgb(200,0,120)';
+  let rowsScrolled = 0;
+  const state = {
+    ctx,
+    words,
+    config,
+    color,
+    getColor() {
+      return color;
+    },
+    newColor() {
+      color = generateRandomColors();
+      return color;
+    },
+    rowsScrolled() {
+      return rowsScrolled;
+    },
+    scroll({ charObj }) {
+      // grab all the words with rows < charObj.row
+      // we'll need to re-draw these
+      const scrollTheseWords = words.filter(word => word.row < charObj.row);
+      drawScrollWords({ state: { ...this, words: scrollTheseWords } });
+      rowsScrolled += 1;
+    },
+  };
+  return state;
+}
 
 function generateRandomColors() {
   const random = () => {
@@ -272,27 +300,6 @@ function generateRandomColors() {
   const B = random();
   const color = `rgb(${R}, ${G}, ${B})`;
   return color;
-}
-
-function makeStateSync({ words, ctx, config }) {
-  let rowsScrolled = 0;
-  const state = {
-    ctx,
-    words,
-    config,
-    rowsScrolled() {
-      return rowsScrolled;
-    },
-    scroll({ charObj }) {
-      // grab all the words with rows < charObj.row
-      // we'll need to re-draw these
-      const scrollTheseWords = words.filter(word => word.row < charObj.row);
-      drawScrollWordsSync({ state: { ...this, words: scrollTheseWords } });
-      rowsScrolled += 1;
-    },
-  };
-
-  return state;
 }
 
 function setupCanvas({
