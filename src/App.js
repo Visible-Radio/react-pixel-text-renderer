@@ -16,13 +16,17 @@ const ominousMessage =
 const borgQueenAteABattery =
   "My <HL>Borg <HL>Queen ate a <HL>Battery, like a <HL>Big square battery, like a <HL>car <HL>battery. She just keeps eating them. \nthen we go to the doctor and he says, 'yeah, <HL>we <HL>found <HL>a <HL>Battery <HL>in <HL>there' ...";
 
+const fromTheThing =
+  '<HL>Projection:\n if <HL>intruder <HL>organism reaches civilized areas ...Entire world population infected <HL>27,000 hours from first contact.';
+
+// 2:1 columns to rows yields 16:9 aspect ratio when gridSpaceX = 0
 function App() {
   useEffect(() => {
     asyncTextRenderer({
       columns: 10,
-      displayRows: 2,
+      displayRows: 5,
       scale: 5,
-      text: borgQueenAteABattery.toUpperCase(),
+      text: fromTheThing.toUpperCase(),
       defs,
     });
     // syncTextRenderer({
