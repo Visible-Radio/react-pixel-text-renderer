@@ -48,7 +48,8 @@ function makeWords(text, columns, defs) {
           return acc;
         }
 
-        let color = generateRandomColors();
+        // let color = generateRandomColors();
+        let color = 'rgb(0,190,187)';
         if (acc.getRemaining() >= segment.length) {
           acc.words.push({
             word,

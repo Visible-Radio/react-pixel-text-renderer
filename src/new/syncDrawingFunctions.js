@@ -74,7 +74,7 @@ function drawFrameSync({ charPoints, charObj, state }) {
       charPointY * scale +
       rowGap +
       borderThickness;
-    if (pxY === 0) return;
+    if ([0, scale].includes(pxY)) return;
     const pxX =
       charObj.col * scale * charWidth +
       charPointX * scale +
