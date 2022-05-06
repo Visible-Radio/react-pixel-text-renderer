@@ -69,16 +69,13 @@ function nodePixelTextRenderer({ columns, scale, text, defs, displayRows }) {
   process.stdout.write('Done!');
 }
 
-const borgQueenAteABattery =
-  "My <HL>Borg <HL>Queen ate a <HL>Battery, like a <HL>Big square battery, like a <HL>car <HL>battery. She just keeps eating them. \nthen we go to the doctor and he says, 'yeah, <HL>we <HL>found <HL>a <HL>Battery <HL>in <HL>there' ...";
-
 const fromTheThing =
   '<HL>Projection:\n if <HL>intruder <HL>organism reaches civilized areas ...Entire world population infected <HL>27,000 hours from first contact.';
 
 nodePixelTextRenderer({
   columns: 10,
   displayRows: 5,
-  scale: 5,
+  scale: 3,
   text: fromTheThing.toUpperCase(),
   defs,
 });

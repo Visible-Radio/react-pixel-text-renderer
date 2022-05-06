@@ -28,7 +28,7 @@ export function asyncTextRenderer({ columns, scale, text, defs, displayRows }) {
     displayRows,
   });
   const state = makeStateAsync({ ctx, words, config });
-
+  console.log(words);
   drawBorder(state);
   asyncDrawWords({ state });
 }
