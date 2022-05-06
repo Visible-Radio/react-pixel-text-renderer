@@ -19,6 +19,8 @@ const borgQueenAteABattery =
 const fromTheThing =
   '<HL>Projection:\n if <HL>intruder <HL>organism reaches civilized areas ...Entire world population infected <HL>27,000 hours from first contact.';
 
+const newlines = 'hi\n\n\n\nhi\n\n hiya';
+
 // 2:1 columns to rows yields 16:9 aspect ratio when gridSpaceX = 0
 function App() {
   useEffect(() => {
